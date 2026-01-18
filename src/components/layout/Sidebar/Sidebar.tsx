@@ -16,11 +16,11 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
         h-screen bg-bg-primary border-r border-sidebar-border
         flex flex-col relative
         transition-all duration-300 ease-in-out
-        ${isExpanded ? 'w-[300px] px-8 py-10' : 'w-[72px] px-4 py-6'}
+        ${isExpanded ? 'w-[300px] px-8 py-8' : 'w-[72px] px-4 py-6'}
       `}
     >
       {/* Estrutura: topo (logo), meio (nav), base (perfil) */}
-      <div className="flex h-full flex-col justify-between gap-10">
+      <div className="flex h-full flex-col justify-between">
         {/* Topo: logo e botão toggle */}
         <div className="flex items-start justify-between relative">
           {isExpanded ? (
@@ -59,23 +59,25 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           </button>
         </div>
 
-        {/* Navegação central */}
-        <nav
-          className={`
-            flex flex-col
-            ${isExpanded ? 'gap-3' : 'gap-2'}
-          `}
-        >
-          {NAVIGATION_ITEMS.map((item) => (
-            <SidebarItem
-              key={item.path}
-              label={item.label}
-              path={item.path}
-              iconName={item.icon}
-              isExpanded={isExpanded}
-            />
-          ))}
-        </nav>
+        {/* Navegação central (aprox. 56px abaixo do logo) */}
+        <div className="flex flex-col gap-3 mt-14">
+          <nav
+            className={`
+              flex flex-col
+              ${isExpanded ? 'gap-3' : 'gap-2'}
+            `}
+          >
+            {NAVIGATION_ITEMS.map((item) => (
+              <SidebarItem
+                key={item.path}
+                label={item.label}
+                path={item.path}
+                iconName={item.icon}
+                isExpanded={isExpanded}
+              />
+            ))}
+          </nav>
+        </div>
 
         {/* Perfil na base */}
         <UserProfile isExpanded={isExpanded} />
