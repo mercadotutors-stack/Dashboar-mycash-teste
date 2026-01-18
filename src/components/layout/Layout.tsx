@@ -1,9 +1,11 @@
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar/Sidebar'
 import { useSidebar } from '../../hooks/useSidebar'
+import { HeaderMobile } from './Header/HeaderMobile'
 
 export function Layout() {
   const sidebar = useSidebar()
+  const mainMarginClass = sidebar.isExpanded ? 'lg:ml-[300px]' : 'lg:ml-[80px]'
 
   // #region agent log
   fetch('http://127.0.0.1:7244/ingest/44256b10-28d3-49da-af14-981df50490d6', {
@@ -26,6 +28,9 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen bg-bg-primary">
+      {/* Header Mobile/Tablet */}
+      <HeaderMobile />
+
       {/* Sidebar - apenas no desktop (lg: ≥1280px) */}
       <div className="hidden lg:block lg:flex-shrink-0">
         <Sidebar isExpanded={sidebar.isExpanded} toggle={sidebar.toggle} />
@@ -36,10 +41,8 @@ export function Layout() {
         className={`
           flex-1 min-w-0 w-full
           transition-all duration-300 ease-in-out
+          ${mainMarginClass}
         `}
-        style={{
-          marginLeft: sidebar.isExpanded ? 300 : 80,
-        }}
       >
         <Outlet />
       </main>

@@ -26,4 +26,7 @@ const iconMap: Record<string, string> = {
   user: 'person',
   chevronLeft: 'chevron_left',
   chevronRight: 'chevron_right',
+  menu: 'menu',
+  close: 'close',
+  logout: 'logout',
 }
