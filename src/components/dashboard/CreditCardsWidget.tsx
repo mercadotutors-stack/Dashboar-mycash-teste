@@ -1,6 +1,9 @@
 import { useMemo, useState, useRef } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { CardDetailsModal } from '../modals/CardDetailsModal'
+import { AddAccountCardModal } from '../modals/AddAccountCardModal'
+import { NewTransactionModal } from '../modals/NewTransactionModal'
 
 type Theme = 'lime' | 'black' | 'white'
 
@@ -36,37 +39,11 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 
 const formatCurrency = (value: number) => currencyFormatter.format(value)
 
-interface ModalProps {
-  title: string
-  children: React.ReactNode
-  onClose: () => void
-}
-
-function Modal({ title, children, onClose }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-full border border-border bg-bg-primary flex items-center justify-center hover:bg-bg-secondary"
-            aria-label="Fechar"
-          >
-            <Icon name="close" className="w-5 h-5 text-text-primary" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
 export function CreditCardsWidget() {
   const { creditCards } = useFinance()
   const [createOpen, setCreateOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [newExpenseCard, setNewExpenseCard] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const touchRef = useRef<{ x: number }>({ x: 0 })
 
@@ -204,17 +181,21 @@ export function CreditCardsWidget() {
         </div>
       )}
 
-      {createOpen && (
-        <Modal title="Novo cartão" onClose={() => setCreateOpen(false)}>
-          <p className="text-text-secondary text-sm">Formulário de criação será implementado nos próximos prompts.</p>
-        </Modal>
-      )}
-
-      {detailId && (
-        <Modal title="Detalhes do cartão" onClose={() => setDetailId(null)}>
-          <p className="text-text-secondary text-sm">Detalhes completos do cartão serão adicionados futuramente.</p>
-        </Modal>
-      )}
+      <AddAccountCardModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CardDetailsModal
+        open={!!detailId}
+        cardId={detailId}
+        onClose={() => setDetailId(null)}
+        onAddExpense={(id) => {
+          setNewExpenseCard(id)
+        }}
+      />
+      <NewTransactionModal
+        open={!!newExpenseCard}
+        onClose={() => setNewExpenseCard(null)}
+        presetAccountId={newExpenseCard ?? undefined}
+        presetType="expense"
+      />
     </section>
   )
 }

@@ -48,7 +48,11 @@ const generateId = () =>
     ? crypto.randomUUID()
     : `id-${Math.random().toString(36).slice(2, 9)}`
 
-export function UpcomingExpensesWidget() {
+type Props = {
+  onAddExpense: () => void
+}
+
+export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   const { bankAccounts, creditCards } = useFinance()
   const initialExpenses = useMemo<PendingExpense[]>(() => {
     const now = new Date()
@@ -111,6 +115,7 @@ export function UpcomingExpensesWidget() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const isCompact = expenses.length > 4
 
   const resolvePaymentSource = (expense: PendingExpense) => {
     const card = creditCards.find((c) => c.id === expense.accountId)
@@ -131,9 +136,7 @@ export function UpcomingExpensesWidget() {
   }
 
   const handleAddNew = () => {
-    // Placeholder até integrar com modal real
-    setFeedback('Abrir modal de nova transação (placeholder)')
-    setTimeout(() => setFeedback(null), 1600)
+    onAddExpense()
   }
 
   const handleMarkAsPaid = (id: string) => {
@@ -208,7 +211,11 @@ export function UpcomingExpensesWidget() {
           <p className="text-text-secondary text-body font-medium">Nenhuma despesa pendente</p>
         </div>
       ) : (
-        <div className="divide-y divide-border">
+        <div
+          className={`divide-y divide-border ${
+            isCompact ? 'max-h-[420px] overflow-y-auto no-scrollbar pr-2 snap-y snap-mandatory' : ''
+          }`}
+        >
           {expenses.map((expense) => {
             const isRemoving = removingId === expense.id
             const isActive = activeId === expense.id
@@ -217,9 +224,9 @@ export function UpcomingExpensesWidget() {
             return (
               <div
                 key={expense.id}
-                className={`flex items-start justify-between gap-4 py-6 transition-all duration-200 ease-out ${
+                className={`flex items-start justify-between gap-4 ${isCompact ? 'py-4' : 'py-6'} transition-all duration-200 ease-out ${
                   isRemoving ? 'opacity-0 -translate-y-1' : ''
-                }`}
+                } ${isCompact ? 'snap-start' : ''}`}
               >
                 <div className="flex flex-col gap-1">
                   <span className="text-heading-md font-semibold text-text-primary">

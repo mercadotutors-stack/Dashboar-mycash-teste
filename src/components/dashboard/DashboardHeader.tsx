@@ -23,7 +23,12 @@ const getCurrentMonthRange = (): DateRange => {
   return { startDate: start, endDate: end }
 }
 
-export function DashboardHeader() {
+type Props = {
+  onAddMember: () => void
+  onNewTransaction: () => void
+}
+
+export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
   const {
     filters,
     setSearchText,
@@ -220,6 +225,7 @@ export function DashboardHeader() {
               shadow-sm hover:bg-bg-secondary
             "
             aria-label="Adicionar membro"
+            onClick={onAddMember}
           >
             <Icon name="add" className="w-6 h-6" />
           </button>
@@ -236,6 +242,7 @@ export function DashboardHeader() {
             w-full sm:w-auto
             min-h-[48px]
           "
+          onClick={onNewTransaction}
         >
           <Icon name="add" className="w-5 h-5" />
           <span>Nova transação</span>

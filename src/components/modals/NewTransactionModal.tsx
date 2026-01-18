@@ -1,0 +1,423 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useFinance } from '../../context/FinanceContext'
+import { Icon } from '../ui/Icon'
+import type { TransactionType } from '../../types'
+
+type Props = {
+  open: boolean
+  onClose: () => void
+  presetAccountId?: string
+  presetType?: TransactionType
+}
+
+type FormState = {
+  type: TransactionType
+  amount: string
+  description: string
+  category: string
+  memberId: string | null
+  accountId: string
+  installments: number
+  isRecurring: boolean
+  newCategory: string
+  showNewCategory: boolean
+}
+
+const defaultState: FormState = {
+  type: 'income',
+  amount: '',
+  description: '',
+  category: '',
+  memberId: null,
+  accountId: '',
+  installments: 1,
+  isRecurring: false,
+  newCategory: '',
+  showNewCategory: false,
+}
+
+export function NewTransactionModal({ open, onClose, presetAccountId, presetType }: Props) {
+  const { addTransaction, bankAccounts, creditCards, familyMembers, transactions } = useFinance()
+  const [state, setState] = useState<FormState>({ ...defaultState, accountId: presetAccountId ?? '' })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setState((prev) => ({
+        ...defaultState,
+        accountId: presetAccountId ?? '',
+        type: presetType ?? 'income',
+      }))
+      setErrors({})
+    }
+  }, [open, presetAccountId, presetType])
+
+  const categoriesByType = useMemo(() => {
+    const incomeCats = new Set<string>()
+    const expenseCats = new Set<string>()
+    transactions.forEach((tx) => {
+      if (tx.type === 'income') incomeCats.add(tx.category)
+      if (tx.type === 'expense') expenseCats.add(tx.category)
+    })
+    return {
+      income: incomeCats.size ? Array.from(incomeCats) : ['Salário', 'Investimentos', 'Bônus'],
+      expense: expenseCats.size ? Array.from(expenseCats) : ['Supermercado', 'Transporte', 'Moradia'],
+    }
+  }, [transactions])
+
+  const accountsGrouped = useMemo(() => {
+    return {
+      banks: bankAccounts.map((acc) => ({ id: acc.id, label: acc.name ?? 'Conta bancária', type: 'bank' as const })),
+      cards: creditCards.map((card) => ({
+        id: card.id,
+        label: card.name ?? card.bank ?? 'Cartão de crédito',
+        type: 'credit' as const,
+      })),
+    }
+  }, [bankAccounts, creditCards])
+
+  const isCreditCard = useMemo(() => {
+    return accountsGrouped.cards.some((c) => c.id === state.accountId)
+  }, [accountsGrouped.cards, state.accountId])
+
+  const showInstallments = state.type === 'expense' && isCreditCard
+  const showRecurring = state.type === 'expense'
+
+  const handleChange = (field: keyof FormState, value: string | number | boolean | null) => {
+    setState((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === 'installments' && typeof value === 'number' && value > 1) {
+        next.isRecurring = false
+      }
+      if (field === 'isRecurring' && value === true) {
+        next.installments = 1
+      }
+      return next
+    })
+  }
+
+  const validate = () => {
+    const nextErrors: Record<string, string> = {}
+    const amountNumber = Number(state.amount.replace(/\./g, '').replace(',', '.'))
+    if (!amountNumber || amountNumber <= 0) nextErrors.amount = 'Informe um valor maior que zero.'
+    if (!state.description || state.description.trim().length < 3)
+      nextErrors.description = 'Descrição deve ter pelo menos 3 caracteres.'
+    if (!state.category) nextErrors.category = 'Selecione ou crie uma categoria.'
+    if (!state.accountId) nextErrors.accountId = 'Selecione uma conta ou cartão.'
+
+    if (showInstallments && (state.installments < 1 || state.installments > 12)) {
+      nextErrors.installments = 'Escolha entre 1x e 12x.'
+    }
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  const handleSubmit = async () => {
+    if (!validate()) return
+
+    const amountNumber = Number(state.amount.replace(/\./g, '').replace(',', '.'))
+    await addTransaction({
+      type: state.type,
+      amount: amountNumber,
+      description: state.description.trim(),
+      category: state.category,
+      date: new Date(),
+      accountId: state.accountId,
+      memberId: state.memberId,
+      installments: showInstallments ? state.installments : 1,
+      currentInstallment: 1,
+      status: 'completed',
+      isRecurring: showRecurring ? state.isRecurring : false,
+      isPaid: false,
+    })
+    setToast('Transação registrada com sucesso!')
+    setTimeout(() => setToast(null), 2000)
+    onClose()
+  }
+
+  if (!open) return null
+
+  const iconBg = state.type === 'income' ? 'bg-[#C4E703]' : 'bg-black'
+  const iconName = state.type === 'income' ? 'south-west' : 'north-east'
+  const selectedCatList = state.type === 'income' ? categoriesByType.income : categoriesByType.expense
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-white animate-fade-in">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center gap-4">
+          <div className={`w-16 h-16 rounded-full ${iconBg} flex items-center justify-center text-text-primary`}>
+            <Icon name={iconName} className={`w-7 h-7 ${state.type === 'expense' ? 'text-white' : 'text-black'}`} />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="text-heading-xl font-bold text-text-primary">Nova Transação</h2>
+            <p className="text-text-secondary text-sm">
+              Registre entradas e saídas para manter seu controle financeiro.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
+          aria-label="Fechar modal"
+        >
+          <Icon name="close" className="w-6 h-6 text-text-primary" />
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
+        <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
+          {/* Toggle */}
+          <div className="bg-gray-100 rounded-full p-1 flex gap-2">
+            {(['income', 'expense'] as TransactionType[]).map((type) => {
+              const selected = state.type === type
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleChange('type', type)}
+                  className={`flex-1 py-3 rounded-full text-center font-semibold transition ${
+                    selected ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary'
+                  }`}
+                >
+                  {type === 'income' ? 'Receita' : 'Despesa'}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Valor */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-text-primary">Valor da Transação</label>
+            <div
+              className={`flex items-center rounded-full border bg-white px-4 h-14 ${
+                errors.amount ? 'border-red-500' : 'border-border'
+              }`}
+            >
+              <span className="text-text-secondary mr-2">R$</span>
+              <input
+                type="number"
+                min="0"
+                value={state.amount}
+                onChange={(e) => handleChange('amount', e.target.value)}
+                className="w-full outline-none text-body text-text-primary bg-transparent"
+                placeholder="0,00"
+              />
+            </div>
+            {errors.amount ? <p className="text-sm text-red-600">{errors.amount}</p> : null}
+          </div>
+
+          {/* Descrição */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-text-primary">Descrição</label>
+            <input
+              type="text"
+              value={state.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                errors.description ? 'border-red-500' : 'border-border'
+              }`}
+              placeholder="Ex: Supermercado Semanal"
+            />
+            {errors.description ? <p className="text-sm text-red-600">{errors.description}</p> : null}
+          </div>
+
+          {/* Categoria */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-text-primary">Categoria</label>
+            <div className="flex gap-2">
+              <select
+                value={state.category}
+                onChange={(e) => handleChange('category', e.target.value)}
+                className={`h-14 flex-1 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.category ? 'border-red-500' : 'border-border'
+                }`}
+              >
+                <option value="">Selecione</option>
+                {selectedCatList.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => handleChange('showNewCategory', !state.showNewCategory)}
+                className="w-14 h-14 rounded-full border border-border flex items-center justify-center bg-white hover:bg-gray-100"
+                aria-label="Nova categoria"
+              >
+                <Icon name={state.showNewCategory ? 'close' : 'add'} className="w-5 h-5 text-text-primary" />
+              </button>
+            </div>
+            {state.showNewCategory ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={state.newCategory}
+                  onChange={(e) => handleChange('newCategory', e.target.value)}
+                  className="flex-1 h-12 rounded-full border border-border px-4 text-body text-text-primary outline-none bg-white"
+                  placeholder="Nome da categoria"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!state.newCategory.trim()) return
+                    handleChange('category', state.newCategory.trim())
+                    handleChange('newCategory', '')
+                    handleChange('showNewCategory', false)
+                  }}
+                  className="px-4 h-12 rounded-full bg-black text-white text-sm font-semibold"
+                >
+                  Salvar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleChange('newCategory', '')
+                    handleChange('showNewCategory', false)
+                  }}
+                  className="px-4 h-12 rounded-full border border-border text-text-secondary text-sm"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : null}
+            {errors.category ? <p className="text-sm text-red-600">{errors.category}</p> : null}
+          </div>
+
+          {/* Membro & Conta */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Membro</label>
+              <select
+                value={state.memberId ?? 'family'}
+                onChange={(e) => handleChange('memberId', e.target.value === 'family' ? null : e.target.value)}
+                className="h-14 rounded-full border border-border bg-white px-4 text-body text-text-primary outline-none"
+              >
+                <option value="family">Família (Geral)</option>
+                {familyMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Conta / Cartão</label>
+              <select
+                value={state.accountId}
+                onChange={(e) => handleChange('accountId', e.target.value)}
+                className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.accountId ? 'border-red-500' : 'border-border'
+                }`}
+              >
+                <option value="">Selecione</option>
+                {accountsGrouped.banks.length ? (
+                  <optgroup label="Contas Bancárias">
+                    {accountsGrouped.banks.map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+                {accountsGrouped.cards.length ? (
+                  <optgroup label="Cartões de Crédito">
+                    {accountsGrouped.cards.map((card) => (
+                      <option key={card.id} value={card.id}>
+                        {card.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
+              </select>
+              {errors.accountId ? <p className="text-sm text-red-600">{errors.accountId}</p> : null}
+            </div>
+          </div>
+
+          {/* Parcelamento */}
+          {showInstallments ? (
+            <div className="flex flex-col gap-2 animate-fade-in">
+              <label className="text-sm font-semibold text-text-primary">Parcelamento</label>
+              <select
+                value={state.installments}
+                onChange={(e) => handleChange('installments', Number(e.target.value))}
+                disabled={state.isRecurring}
+                className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.installments ? 'border-red-500' : 'border-border'
+                } ${state.isRecurring ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                {Array.from({ length: 12 }, (_, idx) => idx + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n === 1 ? 'À vista (1x)' : `${n}x`}
+                  </option>
+                ))}
+              </select>
+              {state.isRecurring ? (
+                <p className="text-sm italic text-text-secondary">Parcelamento desabilitado para despesas recorrentes</p>
+              ) : null}
+              {errors.installments ? <p className="text-sm text-red-600">{errors.installments}</p> : null}
+            </div>
+          ) : null}
+
+          {/* Recorrente */}
+          {showRecurring ? (
+            <div className="flex flex-col gap-2 animate-fade-in">
+              <div
+                className={`rounded-lg border px-4 py-3 bg-blue-50 ${
+                  state.installments > 1 ? 'border-blue-200 opacity-70' : 'border-blue-200'
+                }`}
+              >
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={state.isRecurring}
+                    onChange={(e) => handleChange('isRecurring', e.target.checked)}
+                    disabled={state.installments > 1}
+                    className="mt-1 h-4 w-4"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-text-primary flex items-center gap-2">
+                      <Icon name="repeat" className="w-4 h-4" />
+                      Despesa Recorrente
+                    </span>
+                    <span className="text-sm text-text-secondary">
+                      {state.installments > 1
+                        ? 'Não disponível para compras parceladas'
+                        : 'Marque para repetir automaticamente todo mês.'}
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <footer className="sticky bottom-0 z-10 border-t border-border bg-white px-6 py-4 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-11 px-6 rounded-full border border-border text-text-primary hover:bg-gray-100"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="h-11 px-6 rounded-full bg-black text-white font-semibold hover:opacity-90"
+        >
+          Salvar Transação
+        </button>
+      </footer>
+
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg">
+          {toast}
+        </div>
+      ) : null}
+    </div>
+  )
+}
