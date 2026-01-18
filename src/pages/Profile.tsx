@@ -6,23 +6,50 @@ import { AddMemberModal } from '../components/modals/AddMemberModal'
 type Tab = 'info' | 'settings'
 
 export default function Profile() {
-  const { familyMembers, transactions } = useFinance()
+  const { familyMembers, transactions, addCategory, categories } = useFinance()
   const [tab, setTab] = useState<Tab>('info')
   const [showAdd, setShowAdd] = useState(false)
+  const [showAddIncomeCat, setShowAddIncomeCat] = useState(false)
+  const [showAddExpenseCat, setShowAddExpenseCat] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
 
   const mainUser = familyMembers[0]
 
   const incomeCats = useMemo(() => {
     const set = new Set<string>()
     transactions.filter((t) => t.type === 'income').forEach((t) => set.add(t.category))
+    categories.filter((c) => c.type === 'income').forEach((c) => set.add(c.name))
     return Array.from(set)
-  }, [transactions])
+  }, [transactions, categories])
 
   const expenseCats = useMemo(() => {
     const set = new Set<string>()
     transactions.filter((t) => t.type === 'expense').forEach((t) => set.add(t.category))
+    categories.filter((c) => c.type === 'expense').forEach((c) => set.add(c.name))
     return Array.from(set)
-  }, [transactions])
+  }, [transactions, categories])
+
+  const handleAddCategory = async (type: 'income' | 'expense') => {
+    if (!newCategoryName.trim()) {
+      setToast('Informe um nome para a categoria')
+      setTimeout(() => setToast(null), 2000)
+      return
+    }
+    try {
+      await addCategory({ name: newCategoryName.trim(), type })
+      setToast(`Categoria "${newCategoryName.trim()}" criada com sucesso!`)
+      setTimeout(() => setToast(null), 2000)
+      setNewCategoryName('')
+      setShowAddIncomeCat(false)
+      setShowAddExpenseCat(false)
+    } catch (err) {
+      console.error('Erro ao criar categoria:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar categoria'
+      setToast(`Erro: ${errorMessage}`)
+      setTimeout(() => setToast(null), 3000)
+    }
+  }
 
   return (
     <div className="min-h-screen w-full bg-bg-primary px-page py-6 flex flex-col gap-6">
@@ -154,14 +181,102 @@ export default function Profile() {
             <div className="flex flex-col gap-3">
               <h4 className="text-sm font-semibold text-text-primary">Categorias de Receita</h4>
               <TagList items={incomeCats} />
-              <button className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100">
-                Adicionar Categoria
-              </button>
+              {showAddIncomeCat ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nome da categoria"
+                    className="flex-1 h-10 rounded-full border border-border px-4 text-sm text-text-primary outline-none bg-white"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddCategory('income')
+                      }
+                      if (e.key === 'Escape') {
+                        setShowAddIncomeCat(false)
+                        setNewCategoryName('')
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => handleAddCategory('income')}
+                    className="h-10 px-4 rounded-full bg-black text-white text-sm font-semibold"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddIncomeCat(false)
+                      setNewCategoryName('')
+                    }}
+                    className="h-10 px-4 rounded-full border border-border text-text-secondary text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowAddIncomeCat(true)
+                    setShowAddExpenseCat(false)
+                  }}
+                  className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100"
+                >
+                  Adicionar Categoria
+                </button>
+              )}
               <h4 className="text-sm font-semibold text-text-primary mt-2">Categorias de Despesa</h4>
               <TagList items={expenseCats} />
-              <button className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100">
-                Adicionar Categoria
-              </button>
+              {showAddExpenseCat ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nome da categoria"
+                    className="flex-1 h-10 rounded-full border border-border px-4 text-sm text-text-primary outline-none bg-white"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddCategory('expense')
+                      }
+                      if (e.key === 'Escape') {
+                        setShowAddExpenseCat(false)
+                        setNewCategoryName('')
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => handleAddCategory('expense')}
+                    className="h-10 px-4 rounded-full bg-black text-white text-sm font-semibold"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddExpenseCat(false)
+                      setNewCategoryName('')
+                    }}
+                    className="h-10 px-4 rounded-full border border-border text-text-secondary text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowAddExpenseCat(true)
+                    setShowAddIncomeCat(false)
+                  }}
+                  className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100"
+                >
+                  Adicionar Categoria
+                </button>
+              )}
             </div>
           </SectionCard>
 
@@ -191,6 +306,12 @@ export default function Profile() {
       )}
 
       <AddMemberModal open={showAdd} onClose={() => setShowAdd(false)} />
+
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
+          {toast}
+        </div>
+      ) : null}
     </div>
   )
 }

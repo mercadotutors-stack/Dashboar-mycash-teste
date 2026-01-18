@@ -25,6 +25,7 @@ interface FinanceContextValue {
   setSearchText: (text: string) => void
 
   addTransaction: (input: TransactionInput) => Promise<string>
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>
   addCreditCard: (input: CreditCardInput) => Promise<string>
   addBankAccount: (input: BankAccountInput) => Promise<string>
   addFamilyMember: (input: FamilyMemberInput) => Promise<string>
@@ -282,6 +283,42 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
+  const updateTransaction = useCallback(
+    async (id: string, updates: Partial<Transaction>) => {
+      if (!userId) throw new Error('Usuário não inicializado')
+      
+      const payload: Record<string, any> = {}
+      if (updates.status !== undefined) {
+        payload.status = updates.status === 'pending' ? 'PENDING' : updates.status === 'completed' ? 'COMPLETED' : 'CANCELLED'
+      }
+      if (updates.isPaid !== undefined) {
+        payload.status = updates.isPaid ? 'COMPLETED' : 'PENDING'
+      }
+      if (updates.currentInstallment !== undefined) {
+        payload.installment_number = updates.currentInstallment
+      }
+      
+      const { error } = await supabase.from('transactions').update(payload).eq('id', id)
+      if (error) throw error
+      
+      // Atualiza o estado local
+      setTransactions((prev) =>
+        prev.map((tx) => {
+          if (tx.id === id) {
+            return {
+              ...tx,
+              ...updates,
+              status: updates.isPaid ? 'completed' : (updates.status ?? tx.status),
+              isPaid: updates.isPaid ?? (updates.status === 'completed' ? true : false),
+            }
+          }
+          return tx
+        })
+      )
+    },
+    [userId],
+  )
+
   const addFamilyMember = useCallback(
     async (input: FamilyMemberInput) => {
       if (!userId) throw new Error('Usuário não inicializado')
@@ -472,6 +509,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setTransactionType,
     setSearchText,
     addTransaction,
+    updateTransaction,
     addCreditCard,
     addBankAccount,
     addFamilyMember,

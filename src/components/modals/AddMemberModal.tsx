@@ -38,16 +38,23 @@ export function AddMemberModal({ open, onClose }: Props) {
 
   const handleSubmit = async () => {
     if (!validate()) return
-    await addFamilyMember({
-      name: name.trim(),
-      role: role.trim(),
-      email: '',
-      monthlyIncome: income ? Number(income) : 0,
-      avatarUrl: avatarUrl || undefined,
-    })
-    setToast('Membro adicionado com sucesso!')
-    setTimeout(() => setToast(null), 2000)
-    onClose()
+    try {
+      await addFamilyMember({
+        name: name.trim(),
+        role: role.trim(),
+        email: '',
+        monthlyIncome: income ? Number(income) : 0,
+        avatarUrl: avatarUrl || undefined,
+      })
+      setToast('Membro adicionado com sucesso!')
+      setTimeout(() => setToast(null), 2000)
+      onClose()
+    } catch (err) {
+      console.error('Erro ao adicionar membro:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar membro. Verifique o console.'
+      setToast(`Erro: ${errorMessage}`)
+      setTimeout(() => setToast(null), 4000)
+    }
   }
 
   if (!open) return null

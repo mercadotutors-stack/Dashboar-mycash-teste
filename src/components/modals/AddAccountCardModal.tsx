@@ -60,32 +60,39 @@ export function AddAccountCardModal({ open, onClose }: Props) {
   const handleSubmit = async () => {
     if (!validate()) return
 
-    if (mode === 'bank') {
-      await addBankAccount({
-        name: name.trim(),
-        holderId,
-        balance: Number(balance),
-        bank: undefined,
-        accountType: 'checking',
-      })
-      setToast('Conta adicionada com sucesso!')
-    } else {
-      await addCreditCard({
-        name: name.trim(),
-        holderId,
-        limit: Number(limitValue),
-        currentBill: 0,
-        closingDay: Number(closingDay),
-        dueDay: Number(dueDay),
-        theme: theme as 'black' | 'lime' | 'white',
-        lastDigits: lastDigits || undefined,
-        bank: undefined,
-      })
-      setToast('Cartão adicionado com sucesso!')
-    }
+    try {
+      if (mode === 'bank') {
+        await addBankAccount({
+          name: name.trim(),
+          holderId,
+          balance: Number(balance),
+          bank: undefined,
+          accountType: 'checking',
+        })
+        setToast('Conta adicionada com sucesso!')
+      } else {
+        await addCreditCard({
+          name: name.trim(),
+          holderId,
+          limit: Number(limitValue),
+          currentBill: 0,
+          closingDay: Number(closingDay),
+          dueDay: Number(dueDay),
+          theme: theme as 'black' | 'lime' | 'white',
+          lastDigits: lastDigits || undefined,
+          bank: undefined,
+        })
+        setToast('Cartão adicionado com sucesso!')
+      }
 
-    setTimeout(() => setToast(null), 2000)
-    onClose()
+      setTimeout(() => setToast(null), 2000)
+      onClose()
+    } catch (err) {
+      console.error('Erro ao adicionar conta/cartão:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar conta/cartão. Verifique o console.'
+      setToast(`Erro: ${errorMessage}`)
+      setTimeout(() => setToast(null), 4000)
+    }
   }
 
   if (!open) return null

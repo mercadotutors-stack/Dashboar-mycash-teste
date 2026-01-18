@@ -37,7 +37,7 @@ const defaultState: FormState = {
 }
 
 export function NewTransactionModal({ open, onClose, presetAccountId, presetType }: Props) {
-  const { addTransaction, bankAccounts, creditCards, familyMembers, transactions } = useFinance()
+  const { addTransaction, addCategory, bankAccounts, creditCards, familyMembers, transactions } = useFinance()
   const [state, setState] = useState<FormState>({ ...defaultState, accountId: presetAccountId ?? '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [toast, setToast] = useState<string | null>(null)
@@ -117,24 +117,31 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
   const handleSubmit = async () => {
     if (!validate()) return
 
-    const amountNumber = Number(state.amount.replace(/\./g, '').replace(',', '.'))
-    await addTransaction({
-      type: state.type,
-      amount: amountNumber,
-      description: state.description.trim(),
-      category: state.category,
-      date: new Date(),
-      accountId: state.accountId,
-      memberId: state.memberId,
-      installments: showInstallments ? state.installments : 1,
-      currentInstallment: 1,
-      status: 'completed',
-      isRecurring: showRecurring ? state.isRecurring : false,
-      isPaid: false,
-    })
-    setToast('Transação registrada com sucesso!')
-    setTimeout(() => setToast(null), 2000)
-    onClose()
+    try {
+      const amountNumber = Number(state.amount.replace(/\./g, '').replace(',', '.'))
+      await addTransaction({
+        type: state.type,
+        amount: amountNumber,
+        description: state.description.trim(),
+        category: state.category,
+        date: new Date(),
+        accountId: state.accountId,
+        memberId: state.memberId,
+        installments: showInstallments ? state.installments : 1,
+        currentInstallment: 1,
+        status: 'completed',
+        isRecurring: showRecurring ? state.isRecurring : false,
+        isPaid: false,
+      })
+      setToast('Transação registrada com sucesso!')
+      setTimeout(() => setToast(null), 2000)
+      onClose()
+    } catch (err) {
+      console.error('Erro ao adicionar transação:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar transação. Verifique o console.'
+      setToast(`Erro: ${errorMessage}`)
+      setTimeout(() => setToast(null), 4000)
+    }
   }
 
   if (!open) return null
@@ -261,11 +268,24 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
                 />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     if (!state.newCategory.trim()) return
-                    handleChange('category', state.newCategory.trim())
-                    handleChange('newCategory', '')
-                    handleChange('showNewCategory', false)
+                    try {
+                      await addCategory({
+                        name: state.newCategory.trim(),
+                        type: state.type,
+                      })
+                      handleChange('category', state.newCategory.trim())
+                      handleChange('newCategory', '')
+                      handleChange('showNewCategory', false)
+                      setToast('Categoria criada com sucesso!')
+                      setTimeout(() => setToast(null), 2000)
+                    } catch (err) {
+                      console.error('Erro ao criar categoria:', err)
+                      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar categoria'
+                      setToast(`Erro: ${errorMessage}`)
+                      setTimeout(() => setToast(null), 3000)
+                    }
                   }}
                   className="px-4 h-12 rounded-full bg-black text-white text-sm font-semibold"
                 >
