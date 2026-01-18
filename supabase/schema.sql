@@ -130,15 +130,35 @@ alter table accounts enable row level security;
 alter table transactions enable row level security;
 alter table recurring_transactions enable row level security;
 
+-- Remove políticas antigas antes de criar novas
 do $$
 declare t text;
 begin
   for t in select unnest(array[
     'users','family_members','categories','accounts','transactions','recurring_transactions'
   ]) loop
-    execute format('create policy if not exists "public_all_%s" on %I for all using (true) with check (true);', t, t);
+    execute format('drop policy if exists "public_all_%s" on %I;', t, t);
   end loop;
 end$$;
+
+-- Cria políticas RLS permissivas
+create policy "public_all_users" on users
+  for all using (true) with check (true);
+
+create policy "public_all_family_members" on family_members
+  for all using (true) with check (true);
+
+create policy "public_all_categories" on categories
+  for all using (true) with check (true);
+
+create policy "public_all_accounts" on accounts
+  for all using (true) with check (true);
+
+create policy "public_all_transactions" on transactions
+  for all using (true) with check (true);
+
+create policy "public_all_recurring_transactions" on recurring_transactions
+  for all using (true) with check (true);
 
 -- ============ RPC helpers ============
 -- Cria transação (valida recorrência x parcelas)

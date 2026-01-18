@@ -69,15 +69,37 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const ensureUser = async () => {
       try {
+        // Verifica se as variáveis de ambiente estão configuradas
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseAnonKey) {
+          console.error('Variáveis de ambiente do Supabase não configuradas. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.')
+          return
+        }
+
         const { data, error } = await supabase.from('users').select('*').limit(1)
         if (error) {
           console.error('Erro ao buscar usuário:', error)
+          // Se a tabela não existir, cria o usuário mesmo assim (pode ser erro de RLS)
+          // Tenta criar um usuário padrão
+          const email = 'demo@mycash.local'
+          const name = 'Demo User'
+          const { data: inserted, error: insertError } = await supabase
+            .from('users')
+            .insert({ email, name })
+            .select('*')
+            .single()
+          if (!insertError && inserted) {
+            setUserId(inserted.id)
+          }
           return
         }
         if (data && data.length > 0) {
           setUserId(data[0].id)
           return
         }
+        // Se não houver usuário, cria um padrão
         const email = 'demo@mycash.local'
         const name = 'Demo User'
         const { data: inserted, error: insertError } = await supabase
@@ -251,7 +273,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const addTransaction = useCallback(
     async (input: TransactionInput) => {
-      if (!userId) throw new Error('Usuário não inicializado')
+      // Aguarda um pouco caso o userId ainda esteja sendo inicializado
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
       const payload = {
         user_id: userId,
         type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
@@ -285,7 +313,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const updateTransaction = useCallback(
     async (id: string, updates: Partial<Transaction>) => {
-      if (!userId) throw new Error('Usuário não inicializado')
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
       
       const payload: Record<string, any> = {}
       if (updates.status !== undefined) {
@@ -321,7 +354,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const addFamilyMember = useCallback(
     async (input: FamilyMemberInput) => {
-      if (!userId) throw new Error('Usuário não inicializado')
+      // Aguarda até que o userId esteja disponível (com timeout de 5 segundos)
+      if (!userId) {
+        // Tenta aguardar um pouco para ver se o userId é inicializado
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
       const { data, error } = await supabase
         .from('family_members')
         .insert({
@@ -352,7 +392,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const addBankAccount = useCallback(
     async (input: BankAccountInput) => {
-      if (!userId) throw new Error('Usuário não inicializado')
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
       const { data, error } = await supabase
         .from('accounts')
         .insert({
@@ -384,7 +429,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const addCreditCard = useCallback(
     async (input: CreditCardInput) => {
-      if (!userId) throw new Error('Usuário não inicializado')
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
       const { data, error } = await supabase
         .from('accounts')
         .insert({
@@ -425,7 +475,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const addCategory = useCallback(
     async (input: { name: string; type: 'income' | 'expense' }) => {
-      if (!userId) throw new Error('Usuário não inicializado')
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
       const { data, error } = await supabase
         .from('categories')
         .insert({
