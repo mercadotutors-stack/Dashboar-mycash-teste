@@ -10,6 +10,26 @@ interface SidebarProps {
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
 
+  // #region agent log
+  fetch('http://127.0.0.1:7244/ingest/44256b10-28d3-49da-af14-981df50490d6', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'H1',
+      location: 'Sidebar.tsx:render',
+      message: 'Sidebar render props/state',
+      data: {
+        isExpanded,
+        width: isExpanded ? '300px' : '72px',
+        padding: isExpanded ? '32px (px-8 py-8)' : '16px top/bottom, 16px sides (px-4 py-6)',
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
+
   return (
     <aside
       className={`
@@ -17,19 +37,20 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
         flex flex-col relative
         transition-all duration-300 ease-in-out
         ${isExpanded ? 'w-[300px] px-8 py-8' : 'w-[72px] px-4 py-6'}
+        box-border
       `}
     >
       {/* Estrutura: topo (logo), meio (nav), base (perfil) */}
       <div className="flex h-full flex-col justify-between">
         {/* Topo: logo e botão toggle */}
-        <div className="flex items-start justify-between relative">
+        <div className="flex items-start justify-between relative w-full">
           {isExpanded ? (
             <h1
               className="font-bold text-sidebar-active-text"
               style={{
                 fontFamily: 'Inter, sans-serif',
-                fontSize: '20px',
-                lineHeight: '28px',
+                fontSize: '36px',
+                lineHeight: '44px',
                 letterSpacing: '0.3px',
               }}
             >
@@ -59,8 +80,8 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           </button>
         </div>
 
-        {/* Navegação central (aprox. 56px abaixo do logo) */}
-        <div className="flex flex-col gap-3 mt-14">
+        {/* Navegação central (56px abaixo do logo) */}
+        <div className="flex flex-col gap-3 mt-14 w-full">
           <nav
             className={`
               flex flex-col

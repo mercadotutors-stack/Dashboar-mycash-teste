@@ -12,6 +12,29 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
   const location = useLocation()
   const isActive = location.pathname === path
 
+  // #region agent log
+  fetch('http://127.0.0.1:7244/ingest/44256b10-28d3-49da-af14-981df50490d6', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'H2',
+      location: 'SidebarItem.tsx:render',
+      message: 'SidebarItem render state',
+      data: {
+        label,
+        path,
+        isExpanded,
+        isActive,
+        classesExpanded: isExpanded ? 'gap-2 px-4 py-3 w-[236px] h-12' : undefined,
+        classesCollapsed: !isExpanded ? 'justify-center w-12 h-12' : undefined,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
+
   return (
     <Link
       to={path}
@@ -20,7 +43,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
         rounded-full
         transition-colors duration-200 ease-in-out
         ${isExpanded
-          ? 'gap-2 px-4 py-3 w-[236px] h-12'
+          ? 'gap-3 px-5 py-3 w-[236px] h-14'
           : 'justify-center w-12 h-12'}
         ${isActive
           ? 'bg-sidebar-active text-sidebar-active-text'
@@ -49,8 +72,8 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
           style={{
             fontFamily: 'Inter, sans-serif',
             fontWeight: 600,
-            fontSize: '18px',
-            lineHeight: '24px',
+            fontSize: '22px',
+            lineHeight: '28px',
             letterSpacing: '0.3px',
           }}
         >
