@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ROUTES } from './constants'
+import { Layout } from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import Cards from './pages/Cards'
 import Transactions from './pages/Transactions'
@@ -9,10 +10,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
-        <Route path={ROUTES.CARDS} element={<Cards />} />
-        <Route path={ROUTES.TRANSACTIONS} element={<Transactions />} />
-        <Route path={ROUTES.PROFILE} element={<Profile />} />
+        <Route element={<Layout />}>
+          <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+          <Route path={ROUTES.CARDS} element={<Cards />} />
+          <Route path={ROUTES.TRANSACTIONS} element={<Transactions />} />
+          <Route path={ROUTES.PROFILE} element={<Profile />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

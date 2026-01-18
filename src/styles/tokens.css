@@ -75,6 +75,12 @@
   --color-accent-receita: var(--yellow-400);
   --color-accent-despesa: var(--red-500);
   
+  /* Cores específicas da Sidebar (do design Figma - valores exatos) */
+  --color-sidebar-active: #CDFF00; /* Lime-green brilhante (#CDFF00) - valor exato do Figma */
+  --color-sidebar-active-text: #070B13; /* Texto preto escuro (#070B13) - valor exato do Figma */
+  --color-sidebar-border: #E5E7EB; /* Borda da sidebar (#E5E7EB) - valor exato do Figma */
+  --color-sidebar-avatar-bg: #D9D9D9; /* Background do avatar (#D9D9D9) - valor exato do Figma */
+  
   /* Cores de Marca */
   --color-brand-nubank: #8A05BE;
   --color-brand-inter: #FF7A00;
@@ -94,11 +100,28 @@
   --spacing-card: var(--spacing-md);
   --spacing-grid: var(--spacing-md);
   --spacing-item: var(--spacing-sm);
+  
+  /* Espaçamentos específicos da Sidebar (do design Figma) */
+  --spacing-sidebar-padding: 32px; /* Padding da sidebar - valor exato do Figma */
+  --spacing-sidebar-gap: 118px; /* Gap entre seções - valor exato do Figma */
+  --spacing-sidebar-item-padding-x: 16px; /* Padding horizontal do item - valor exato do Figma */
+  --spacing-sidebar-item-padding-y: 12px; /* Padding vertical do item - valor exato do Figma */
+  --spacing-sidebar-item-gap: 8px; /* Gap entre ícone e texto - valor exato do Figma */
+  --spacing-sidebar-profile-gap: 12px; /* Gap no perfil - valor exato do Figma */
 
   /* Tipografia */
-  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
+  
+  /* Tipografia específica da Sidebar (do design Figma) */
+  --font-size-sidebar-label: 18px; /* Label/Large - valor exato do Figma */
+  --line-height-sidebar-label: 24px; /* 133% do font-size */
+  --letter-spacing-sidebar-label: 0.3px; /* Valor exato do Figma */
+  --font-size-sidebar-name: 16px; /* Label/Medium - valor exato do Figma */
+  --line-height-sidebar-name: 20px; /* 125% do font-size */
+  --font-size-sidebar-email: 14px; /* Paragraph/Small - valor exato do Figma */
+  --line-height-sidebar-email: 20px; /* 143% do font-size */
   
   /* Tamanhos de Fonte Semânticos */
   --font-size-heading-xl: 32px;
@@ -118,8 +141,17 @@
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 16px;
-  --border-radius-full: 9999px;
+  --border-radius-xl: 20px; /* Border radius de cards - valor exato do Figma */
+  --border-radius-full: 100px; /* Border radius totalmente arredondado - valor exato do Figma (não 9999px!) */
   --shape-circle: 50%;
+  
+  /* Dimensões específicas da Sidebar (do design Figma) */
+  --sidebar-width-expanded: 300px; /* Largura expandida - valor exato do Figma */
+  --sidebar-item-width: 236px; /* Largura do item - valor exato do Figma */
+  --sidebar-item-height: 48px; /* Altura do item - valor exato do Figma */
+  --sidebar-icon-size: 16px; /* Tamanho do ícone - valor exato do Figma */
+  --sidebar-avatar-size: 24px; /* Tamanho do avatar - valor exato do Figma */
+  --sidebar-toggle-size: 24px; /* Tamanho do botão toggle - valor exato do Figma */
 }
 
 /* Responsividade - Espaçamento Page */
