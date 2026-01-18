@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Icon } from '../../ui/Icon'
 import { MenuDropdown } from './MenuDropdown'
 
 const mockUser = {
@@ -20,7 +19,7 @@ export function HeaderMobile() {
         className="
           fixed top-0 left-0 right-0 z-40
           flex items-center justify-between
-          px-4 py-3
+          px-5 py-4
           bg-bg-primary
           border-b border-border
           shadow-sm
@@ -43,22 +42,26 @@ export function HeaderMobile() {
 
         <button
           onClick={toggle}
+          aria-expanded={isOpen}
           className="
-            w-10 h-10 rounded-full
+            w-12 h-12 rounded-full
             bg-bg-secondary
             border border-border
             flex items-center justify-center
             text-text-primary
+            font-semibold
+            transition-shadow duration-150
+            focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-bg-primary
           "
-          aria-label="Abrir menu"
+          aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
         >
-          <Icon name={isOpen ? 'close' : 'menu'} className="w-6 h-6" />
+          <span className="text-base leading-5 tracking-[0.3px]">{mockUser.avatar}</span>
         </button>
       </header>
 
       <MenuDropdown isOpen={isOpen} onClose={close} user={mockUser} />
       {/* Spacer to empurrar conteúdo para baixo do header fixo */}
-      <div className="h-16 lg:hidden" aria-hidden />
+      <div className="h-20 lg:hidden" aria-hidden />
     </>
   )
 }
