@@ -38,7 +38,6 @@ const iconMap: Record<string, string> = {
   arrowDown: 'arrow_downward',
   chart: 'query_stats',
   list: 'checklist',
-  close: 'close',
   'north-east': 'north_east',
   'south-west': 'south_west',
   repeat: 'repeat',

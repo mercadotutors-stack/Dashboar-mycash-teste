@@ -44,7 +44,7 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
 
   useEffect(() => {
     if (open) {
-      setState((prev) => ({
+      setState(() => ({
         ...defaultState,
         accountId: presetAccountId ?? '',
         type: presetType ?? 'income',

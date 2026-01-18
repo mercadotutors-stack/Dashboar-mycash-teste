@@ -11,7 +11,7 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export default function Transactions() {
-  const { getFilteredTransactions, bankAccounts, creditCards, familyMembers, filters } = useFinance()
+  const { getFilteredTransactions, bankAccounts, creditCards, familyMembers } = useFinance()
   const baseTransactions = getFilteredTransactions()
 
   const [search, setSearch] = useState('')
