@@ -103,10 +103,10 @@ export function DashboardHeader() {
   }
 
   return (
-    <div className="w-full flex flex-wrap items-center gap-3 justify-between">
+    <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Esquerda: busca, filtros, período */}
-      <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[260px]">
-        <div className="relative flex-1 min-w-[220px] max-w-[320px] w-full">
+      <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 lg:gap-4 lg:flex-1">
+        <div className="relative flex-1 basis-0 min-w-[240px]">
           <Icon name="search" className="w-5 h-5 text-text-secondary absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -123,7 +123,7 @@ export function DashboardHeader() {
           />
         </div>
 
-        <div className="relative" ref={filterRef}>
+        <div className="relative shrink-0" ref={filterRef}>
           <button
             type="button"
             onClick={handleFilterClick}
@@ -152,7 +152,7 @@ export function DashboardHeader() {
           )}
         </div>
 
-        <div className="relative" ref={dateRef}>
+        <div className="relative shrink-0" ref={dateRef}>
           <button
             type="button"
             onClick={handleDateClick}
@@ -167,7 +167,7 @@ export function DashboardHeader() {
             "
           >
             <Icon name="calendar" className="w-5 h-5" />
-            <span className="text-sm sm:text-base">{rangeLabel}</span>
+            <span className="text-sm sm:text-base whitespace-nowrap">{rangeLabel}</span>
           </button>
           {isDateOpen && (
             <DateRangePicker
@@ -181,7 +181,7 @@ export function DashboardHeader() {
       </div>
 
       {/* Direita: membros e CTA */}
-      <div className="flex items-center gap-3 flex-wrap justify-end w-full lg:w-auto">
+      <div className="flex items-center gap-3 flex-wrap justify-end w-full lg:w-auto lg:flex-nowrap lg:gap-4 lg:ml-6">
         <div className="flex items-center gap-2">
           <div className="flex items-center">
             {familyMembers.map((member, index) => {

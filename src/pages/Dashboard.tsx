@@ -2,7 +2,7 @@ import { DashboardHeader } from '../components/dashboard/DashboardHeader'
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen w-full bg-bg-primary p-page">
+    <div className="min-h-screen w-full bg-bg-primary px-4 md:px-6 lg:px-8 py-6">
       <div className="flex flex-col gap-6">
         <DashboardHeader />
         <div className="text-text-secondary text-body">
