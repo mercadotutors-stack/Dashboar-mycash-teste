@@ -1,11 +1,14 @@
-import { useSidebar } from '../../../hooks/useSidebar'
 import { NAVIGATION_ITEMS } from '../../../constants'
 import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
 
-export function Sidebar() {
-  const { isExpanded, toggle } = useSidebar()
+interface SidebarProps {
+  isExpanded: boolean
+  toggle: () => void
+}
+
+export function Sidebar({ isExpanded, toggle }: SidebarProps) {
 
   return (
     <aside
@@ -13,7 +16,7 @@ export function Sidebar() {
         h-screen bg-bg-primary border-r border-sidebar-border
         flex flex-col relative
         transition-all duration-300 ease-in-out
-        ${isExpanded ? 'w-[300px] px-8 py-10' : 'w-20 px-4 py-6'}
+        ${isExpanded ? 'w-[300px] px-8 py-10' : 'w-[72px] px-4 py-6'}
       `}
     >
       {/* Estrutura: topo (logo), meio (nav), base (perfil) */}

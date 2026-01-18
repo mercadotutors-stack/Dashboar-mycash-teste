@@ -1,27 +1,29 @@
-/**
- * Componente de ícone simples
- * Por enquanto usa emojis, futuramente pode ser substituído por biblioteca de ícones
- */
 interface IconProps {
   name: string
   className?: string
 }
 
+/**
+ * Usa Google Material Symbols Outlined (via font import em index.html).
+ */
 export function Icon({ name, className = '' }: IconProps) {
-  const iconMap: Record<string, string> = {
-    home: '🏠',
-    'credit-card': '💳',
-    transactions: '📊',
-    user: '👤',
-    chevronLeft: '◀',
-    chevronRight: '▶',
-  }
-
-  const icon = iconMap[name] || '•'
+  const materialName = iconMap[name] ?? name
 
   return (
-    <span className={`inline-flex items-center justify-center ${className}`} role="img" aria-label={name}>
-      {icon}
+    <span
+      className={`material-symbols-outlined inline-flex items-center justify-center ${className}`}
+      aria-hidden="true"
+    >
+      {materialName}
     </span>
   )
+}
+
+const iconMap: Record<string, string> = {
+  home: 'home',
+  'credit-card': 'credit_card',
+  transactions: 'stacked_bar_chart',
+  user: 'person',
+  chevronLeft: 'chevron_left',
+  chevronRight: 'chevron_right',
 }

@@ -23,7 +23,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
           ? 'gap-2 px-4 py-3 w-[236px] h-12'
           : 'justify-center w-12 h-12'}
         ${isActive
-          ? 'bg-black text-white'
+          ? 'bg-sidebar-active text-sidebar-active-text'
           : 'text-text-secondary hover:bg-bg-secondary hover:text-text-primary'}
       `}
       title={!isExpanded ? label : undefined}
@@ -34,7 +34,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
           name={iconName}
           className={`
             w-full h-full
-            ${isActive ? 'text-primary' : 'text-text-secondary'}
+            ${isActive ? 'text-sidebar-active-text' : 'text-text-secondary'}
           `}
         />
       </span>
@@ -44,7 +44,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
         <span
           className={`
             truncate font-semibold
-            ${isActive ? 'text-white' : 'text-text-secondary'}
+            ${isActive ? 'text-sidebar-active-text' : 'text-text-secondary'}
           `}
           style={{
             fontFamily: 'Inter, sans-serif',
@@ -53,6 +53,25 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
             lineHeight: '24px',
             letterSpacing: '0.3px',
           }}
+        >
+          {label}
+        </span>
+      )}
+
+      {/* Tooltip no colapsado */}
+      {!isExpanded && (
+        <span
+          className="
+            absolute left-full ml-3 top-1/2 -translate-y-1/2
+            whitespace-nowrap
+            bg-black text-white text-sm font-medium
+            rounded-full px-3 py-1
+            opacity-0 pointer-events-none
+            group-hover:opacity-100
+            transition-opacity duration-150
+            shadow-lg
+            z-50
+          "
         >
           {label}
         </span>
