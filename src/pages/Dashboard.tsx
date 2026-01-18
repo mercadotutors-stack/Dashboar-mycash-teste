@@ -1,6 +1,7 @@
 import { DashboardHeader } from '../components/dashboard/DashboardHeader'
 import { SummaryCards } from '../components/dashboard/SummaryCards'
 import { ExpensesByCategoryCarousel } from '../components/dashboard/ExpensesByCategoryCarousel'
+import { FinancialFlowChart } from '../components/dashboard/FinancialFlowChart'
 
 export default function Dashboard() {
   return (
@@ -9,6 +10,7 @@ export default function Dashboard() {
         <DashboardHeader />
         <SummaryCards />
         <ExpensesByCategoryCarousel />
+        <FinancialFlowChart />
         <div className="text-text-secondary text-body">Conteúdo do dashboard será implementado nos próximos prompts.</div>
       </div>
     </div>

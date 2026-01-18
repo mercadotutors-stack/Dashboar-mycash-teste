@@ -36,4 +36,5 @@ const iconMap: Record<string, string> = {
   check: 'check_circle',
   arrowUp: 'arrow_upward',
   arrowDown: 'arrow_downward',
+  chart: 'query_stats',
 }
