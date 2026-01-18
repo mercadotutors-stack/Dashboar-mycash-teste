@@ -5,7 +5,6 @@ import { HeaderMobile } from './Header/HeaderMobile'
 
 export function Layout() {
   const sidebar = useSidebar()
-  const mainMarginClass = sidebar.isExpanded ? 'lg:ml-[300px]' : 'lg:ml-[80px]'
 
   // #region agent log
   fetch('http://127.0.0.1:7244/ingest/44256b10-28d3-49da-af14-981df50490d6', {
@@ -41,7 +40,6 @@ export function Layout() {
         className={`
           flex-1 min-w-0 w-full
           transition-all duration-300 ease-in-out
-          ${mainMarginClass}
         `}
       >
         <Outlet />
