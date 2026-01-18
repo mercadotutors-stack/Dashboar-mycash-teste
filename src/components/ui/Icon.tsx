@@ -37,4 +37,5 @@ const iconMap: Record<string, string> = {
   arrowUp: 'arrow_upward',
   arrowDown: 'arrow_downward',
   chart: 'query_stats',
+  list: 'checklist',
 }
