@@ -8,4 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase env vars ausentes: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Cria cliente apenas se variáveis estiverem definidas, caso contrário usa valores vazios para evitar crash
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+)

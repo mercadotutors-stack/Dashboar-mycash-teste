@@ -67,15 +67,31 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const ensureUser = async () => {
-      const { data } = await supabase.from('users').select('*').limit(1)
-      if (data && data.length > 0) {
-        setUserId(data[0].id)
-        return
+      try {
+        const { data, error } = await supabase.from('users').select('*').limit(1)
+        if (error) {
+          console.error('Erro ao buscar usuário:', error)
+          return
+        }
+        if (data && data.length > 0) {
+          setUserId(data[0].id)
+          return
+        }
+        const email = 'demo@mycash.local'
+        const name = 'Demo User'
+        const { data: inserted, error: insertError } = await supabase
+          .from('users')
+          .insert({ email, name })
+          .select('*')
+          .single()
+        if (insertError) {
+          console.error('Erro ao criar usuário:', insertError)
+          return
+        }
+        if (inserted) setUserId(inserted.id)
+      } catch (err) {
+        console.error('Erro inesperado ao garantir usuário:', err)
       }
-      const email = 'demo@mycash.local'
-      const name = 'Demo User'
-      const { data: inserted } = await supabase.from('users').insert({ email, name }).select('*').single()
-      if (inserted) setUserId(inserted.id)
     }
     ensureUser()
   }, [])
@@ -83,12 +99,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!userId) return
     const loadAll = async () => {
-      const [fm, acc, cat, tx] = await Promise.all([
-        supabase.from('family_members').select('*'),
-        supabase.from('accounts').select('*'),
-        supabase.from('categories').select('*'),
-        supabase.from('transactions').select('*'),
-      ])
+      try {
+        const [fm, acc, cat, tx] = await Promise.all([
+          supabase.from('family_members').select('*'),
+          supabase.from('accounts').select('*'),
+          supabase.from('categories').select('*'),
+          supabase.from('transactions').select('*'),
+        ])
 
       if (fm.data) {
         setFamilyMembers(
@@ -173,6 +190,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             updatedAt: toDate(t.updated_at),
           })),
         )
+      }
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err)
       }
     }
     loadAll()
