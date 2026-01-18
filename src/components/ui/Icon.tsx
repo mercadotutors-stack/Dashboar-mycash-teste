@@ -29,4 +29,9 @@ const iconMap: Record<string, string> = {
   menu: 'menu',
   close: 'close',
   logout: 'logout',
+  search: 'search',
+  tune: 'tune',
+  add: 'add',
+  calendar: 'calendar_month',
+  check: 'check_circle',
 }

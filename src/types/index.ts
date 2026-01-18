@@ -117,7 +117,7 @@ export type Account = BankAccount | CreditCard;
  */
 export interface DateRange {
   startDate: Date;
-  endDate: Date;
+  endDate: Date | null;
 }
 
 /**
