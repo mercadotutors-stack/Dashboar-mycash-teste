@@ -1,13 +1,13 @@
 import { DashboardHeader } from '../components/dashboard/DashboardHeader'
+import { SummaryCards } from '../components/dashboard/SummaryCards'
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-0 lg:pl-8 py-6">
+    <div className="min-h-screen w-full bg-bg-primary px-0 lg:px-8 py-6">
       <div className="flex flex-col gap-6">
         <DashboardHeader />
-        <div className="text-text-secondary text-body">
-          Conteúdo do dashboard será implementado nos próximos prompts.
-        </div>
+        <SummaryCards />
+        <div className="text-text-secondary text-body">Conteúdo do dashboard será implementado nos próximos prompts.</div>
       </div>
     </div>
   )

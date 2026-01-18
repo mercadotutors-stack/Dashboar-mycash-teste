@@ -34,4 +34,6 @@ const iconMap: Record<string, string> = {
   add: 'add',
   calendar: 'calendar_month',
   check: 'check_circle',
+  arrowUp: 'arrow_upward',
+  arrowDown: 'arrow_downward',
 }
