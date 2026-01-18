@@ -35,6 +35,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
       className={`
         h-screen bg-bg-primary border-r border-sidebar-border
         flex flex-col relative
+        sticky top-0
         transition-all duration-300 ease-in-out
         ${isExpanded ? 'w-[300px] px-8 py-8' : 'w-[72px] px-4 py-6'}
         box-border
