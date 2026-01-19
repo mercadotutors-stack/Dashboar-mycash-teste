@@ -199,14 +199,30 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
                   className={`
                     relative w-11 h-11 rounded-full border-2 border-bg-primary
                     bg-bg-secondary text-text-primary font-semibold
-                    flex items-center justify-center
+                    flex items-center justify-center overflow-hidden
                     transition-all duration-150
                     ${selected ? 'ring-2 ring-text-primary scale-105 z-20' : 'hover:scale-105'}
                     ${index > 0 ? '-ml-3' : ''}
                   `}
                   title={member.name}
                 >
-                  {member.name.charAt(0)}
+                  {member.avatarUrl ? (
+                    <img
+                      src={member.avatarUrl}
+                      alt={member.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.textContent = member.name.charAt(0)
+                        }
+                      }}
+                    />
+                  ) : (
+                    member.name.charAt(0)
+                  )}
                   {selected && (
                     <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-bg-primary border border-bg-primary flex items-center justify-center">
                       <Icon name="check" className="w-4 h-4 text-sidebar-active" />

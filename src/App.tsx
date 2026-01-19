@@ -11,6 +11,7 @@ import Cards from './pages/Cards'
 import Accounts from './pages/Accounts'
 import Transactions from './pages/Transactions'
 import Profile from './pages/Profile'
+import MemberProfile from './pages/MemberProfile'
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path={ROUTES.ACCOUNTS} element={<Accounts />} />
           <Route path={ROUTES.TRANSACTIONS} element={<Transactions />} />
           <Route path={ROUTES.PROFILE} element={<Profile />} />
+          <Route path="/profile/:memberId" element={<MemberProfile />} />
         </Route>
 
         {/* Redireciona rotas desconhecidas para login */}

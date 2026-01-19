@@ -15,6 +15,7 @@ export const ROUTES = {
   ACCOUNTS: '/accounts',
   TRANSACTIONS: '/transactions',
   PROFILE: '/profile',
+  MEMBER_PROFILE: '/profile/:memberId',
 } as const;
 
 /**

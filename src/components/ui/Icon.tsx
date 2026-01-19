@@ -28,6 +28,9 @@ import {
   KeyIcon,
   CurrencyDollarIcon,
   ArrowTrendingDownIcon,
+  ArrowLeftIcon,
+  EnvelopeIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline'
 import type { ComponentType, SVGProps } from 'react'
 
@@ -63,6 +66,7 @@ const iconMap: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   // Ações
   chevronLeft: ChevronLeftIcon,
   chevronRight: ChevronRightIcon,
+  arrow_back: ArrowLeftIcon,
   menu: Bars3Icon,
   close: XMarkIcon,
   logout: ArrowRightOnRectangleIcon,
@@ -84,6 +88,8 @@ const iconMap: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   person_add: UserPlusIcon,
   lock_reset: KeyIcon,
   lock: LockClosedIcon,
+  email: EnvelopeIcon,
+  visibility: EyeIcon,
 
   // Compatibilidade com Material Symbols
   attach_money: CurrencyDollarIcon,

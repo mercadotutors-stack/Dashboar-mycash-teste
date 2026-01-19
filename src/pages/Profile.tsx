@@ -1,14 +1,22 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../context/FinanceContext'
+import { FamilyMember } from '../types'
 import { Icon } from '../components/ui/Icon'
+import { Tooltip } from '../components/ui/Tooltip'
 import { AddMemberModal } from '../components/modals/AddMemberModal'
+import { EditMemberModal } from '../components/modals/EditMemberModal'
+import { ROUTES } from '../constants'
 
 type Tab = 'info' | 'settings'
 
 export default function Profile() {
   const { familyMembers, transactions, addCategory, categories } = useFinance()
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('info')
   const [showAdd, setShowAdd] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [editingMember, setEditingMember] = useState<FamilyMember | null>(null)
   const [showAddIncomeCat, setShowAddIncomeCat] = useState(false)
   const [showAddExpenseCat, setShowAddExpenseCat] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -79,8 +87,12 @@ export default function Profile() {
         <div className="flex flex-col gap-6">
           {mainUser ? (
             <div className="rounded-xl border border-border bg-white p-4 sm:p-6 flex flex-col md:flex-row gap-4 items-center">
-              <div className="w-28 h-28 rounded-full bg-gray-100 border border-border flex items-center justify-center text-heading-lg font-bold">
-                {mainUser.name.charAt(0)}
+              <div className="w-28 h-28 rounded-full bg-gray-100 border border-border flex items-center justify-center text-heading-lg font-bold overflow-hidden">
+                {mainUser.avatarUrl ? (
+                  <img src={mainUser.avatarUrl} alt={mainUser.name} className="w-full h-full object-cover" />
+                ) : (
+                  mainUser.name.charAt(0)
+                )}
               </div>
               <div className="flex-1 flex flex-col gap-1">
                 <h2 className="text-heading-lg font-semibold text-text-primary">{mainUser.name}</h2>
@@ -94,22 +106,32 @@ export default function Profile() {
                   Renda mensal: R$ {mainUser.monthlyIncome?.toLocaleString('pt-BR') ?? '0,00'}
                 </p>
               </div>
-              <button className="h-10 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 text-sm">
-                Editar Perfil
-              </button>
+              <Tooltip content="Editar informações do seu perfil" position="top">
+                <button
+                  onClick={() => {
+                    setEditingMember(mainUser)
+                    setShowEdit(true)
+                  }}
+                  className="h-10 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 text-sm"
+                >
+                  Editar Perfil
+                </button>
+              </Tooltip>
             </div>
           ) : null}
 
           <div className="rounded-xl border border-border bg-white p-4 sm:p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-heading-md font-semibold text-text-primary">Membros da Família</h3>
-              <button
-                onClick={() => setShowAdd(true)}
-                className="h-10 px-4 rounded-full bg-black text-white text-sm font-semibold flex items-center gap-2"
-              >
-                <Icon name="add" className="w-4 h-4" />
-                Adicionar Membro da Família
-              </button>
+              <Tooltip content="Adicionar novo membro à família" position="bottom">
+                <button
+                  onClick={() => setShowAdd(true)}
+                  className="h-10 px-4 rounded-full bg-black text-white text-sm font-semibold flex items-center gap-2"
+                >
+                  <Icon name="add" className="w-4 h-4" />
+                  Adicionar Membro da Família
+                </button>
+              </Tooltip>
             </div>
 
             {familyMembers.length === 1 ? (
@@ -124,18 +146,43 @@ export default function Profile() {
                   key={member.id}
                   className="rounded-lg bg-gray-50 hover:bg-gray-100 transition border border-border px-4 py-3 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1">
                     <div className="w-12 h-12 rounded-full bg-white border border-border flex items-center justify-center text-body font-semibold">
-                      {member.name.charAt(0)}
+                      {member.avatarUrl ? (
+                        <img src={member.avatarUrl} alt={member.name} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        member.name.charAt(0)
+                      )}
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col flex-1">
                       <span className="text-body font-semibold text-text-primary">{member.name}</span>
                       <span className="text-sm text-text-secondary">{member.role}</span>
                     </div>
                   </div>
-                  <span className="text-body font-semibold text-text-primary">
-                    R$ {member.monthlyIncome?.toLocaleString('pt-BR') ?? '0,00'}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-body font-semibold text-text-primary">
+                      R$ {member.monthlyIncome?.toLocaleString('pt-BR') ?? '0,00'}
+                    </span>
+                    <Tooltip content={`Ver perfil de ${member.name}`} position="top">
+                      <button
+                        onClick={() => navigate(`${ROUTES.PROFILE}/${member.id}`)}
+                        className="h-9 px-3 rounded-full border border-border text-text-primary hover:bg-gray-100 text-sm flex items-center gap-1"
+                      >
+                        <Icon name="visibility" className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content={`Editar perfil de ${member.name}`} position="top">
+                      <button
+                        onClick={() => {
+                          setEditingMember(member)
+                          setShowEdit(true)
+                        }}
+                        className="h-9 px-3 rounded-full border border-border text-text-primary hover:bg-gray-100 text-sm flex items-center gap-1"
+                      >
+                        <Icon name="edit" className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                  </div>
                 </div>
               ))}
             </div>
@@ -306,6 +353,14 @@ export default function Profile() {
       )}
 
       <AddMemberModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <EditMemberModal
+        open={showEdit}
+        member={editingMember}
+        onClose={() => {
+          setShowEdit(false)
+          setEditingMember(null)
+        }}
+      />
 
       {toast ? (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">

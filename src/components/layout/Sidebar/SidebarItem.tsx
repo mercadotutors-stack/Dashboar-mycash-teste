@@ -47,7 +47,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
           : 'justify-center w-12 h-12'}
         ${isActive
           ? 'bg-sidebar-active text-sidebar-active-text'
-          : 'text-text-secondary hover:bg-bg-secondary hover:text-text-primary'}
+          : 'text-text-primary hover:bg-bg-secondary'}
       `}
       title={!isExpanded ? label : undefined}
     >
@@ -57,7 +57,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
           name={iconName}
           className={`
             w-full h-full
-            ${isActive ? 'text-sidebar-active-text' : 'text-text-secondary'}
+            ${isActive ? 'text-sidebar-active-text' : 'text-text-primary'}
           `}
         />
       </span>
@@ -67,7 +67,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
         <span
           className={`
             truncate font-semibold
-            ${isActive ? 'text-sidebar-active-text' : 'text-text-secondary'}
+            ${isActive ? 'text-sidebar-active-text' : 'text-text-primary'}
           `}
           style={{
             fontFamily: 'Inter, sans-serif',

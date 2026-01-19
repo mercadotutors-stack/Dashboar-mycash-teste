@@ -35,6 +35,7 @@ interface FinanceContextValue {
   updateBankAccount: (id: string, input: Partial<BankAccountInput>) => Promise<void>
   deleteBankAccount: (id: string) => Promise<void>
   addFamilyMember: (input: FamilyMemberInput) => Promise<string>
+  updateFamilyMember: (id: string, input: Partial<FamilyMemberInput>) => Promise<void>
   addCategory: (input: { name: string; type: 'income' | 'expense' }) => Promise<string>
 
   getFilteredTransactions: () => Transaction[]
@@ -157,7 +158,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             id: item.id,
             name: item.name,
             role: item.role,
-            email: '',
+            email: item.email ?? '',
             avatarUrl: item.avatar_url ?? undefined,
             monthlyIncome: Number(item.monthly_income ?? 0),
             createdAt: toDate(item.created_at),
@@ -407,6 +408,43 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
       setFamilyMembers((prev) => [...prev, member])
       return data.id as string
+    },
+    [userId],
+  )
+
+  const updateFamilyMember = useCallback(
+    async (id: string, input: Partial<FamilyMemberInput>) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+      const payload: Record<string, any> = {}
+      if (input.name !== undefined) payload.name = input.name
+      if (input.role !== undefined) payload.role = input.role
+      if (input.email !== undefined) payload.email = input.email
+      if (input.avatarUrl !== undefined) payload.avatar_url = input.avatarUrl ?? null
+      if (input.monthlyIncome !== undefined) payload.monthly_income = input.monthlyIncome ?? 0
+
+      const { data, error } = await supabase
+        .from('family_members')
+        .update(payload)
+        .eq('id', id)
+        .select('*')
+        .single()
+      if (error) throw error
+      const member: FamilyMember = {
+        id: data.id,
+        name: data.name,
+        role: data.role,
+        email: data.email ?? '',
+        avatarUrl: data.avatar_url ?? undefined,
+        monthlyIncome: Number(data.monthly_income ?? 0),
+        createdAt: toDate(data.created_at),
+        updatedAt: toDate(data.updated_at),
+      }
+      setFamilyMembers((prev) => prev.map((m) => (m.id === id ? member : m)))
     },
     [userId],
   )
@@ -719,6 +757,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     updateBankAccount,
     deleteBankAccount,
     addFamilyMember,
+    updateFamilyMember,
     addCategory,
     getFilteredTransactions,
     calculateTotalBalance,
