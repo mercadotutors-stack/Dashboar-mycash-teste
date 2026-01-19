@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { Transaction, CreditCard, BankAccount, FamilyMember, GlobalFilters, DateRange } from '../types'
 import { supabase } from '../lib/supabaseClient'
+import { useAuth } from './AuthContext'
 
 type TransactionInput = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
 type CreditCardInput = Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt'>
@@ -63,6 +64,7 @@ const INITIAL_FILTERS: GlobalFilters = {
 }
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const [userId, setUserId] = useState<string | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [creditCards, setCreditCards] = useState<CreditCard[]>([])
@@ -71,7 +73,19 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([])
   const [filters, setFilters] = useState<GlobalFilters>(INITIAL_FILTERS)
 
+  // Usa o usuário autenticado do AuthContext
   useEffect(() => {
+    if (!user) {
+      setUserId(null)
+      // Limpa dados quando usuário faz logout
+      setTransactions([])
+      setCreditCards([])
+      setBankAccounts([])
+      setFamilyMembers([])
+      setCategories([])
+      return
+    }
+
     const ensureUser = async () => {
       try {
         // Verifica se as variáveis de ambiente estão configuradas
@@ -83,46 +97,48 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const { data, error } = await supabase.from('users').select('*').limit(1)
-        if (error) {
-          console.error('Erro ao buscar usuário:', error)
-          // Se a tabela não existir, cria o usuário mesmo assim (pode ser erro de RLS)
-          // Tenta criar um usuário padrão
-          const email = 'demo@mycash.local'
-          const name = 'Demo User'
-          const { data: inserted, error: insertError } = await supabase
-            .from('users')
-            .insert({ email, name })
-            .select('*')
-            .single()
-          if (!insertError && inserted) {
-            setUserId(inserted.id)
-          }
+        // Busca ou cria o usuário na tabela users usando o email do usuário autenticado
+        const { data: existingUser, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle()
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Erro ao buscar usuário:', fetchError)
           return
         }
-        if (data && data.length > 0) {
-          setUserId(data[0].id)
+
+        if (existingUser) {
+          setUserId(existingUser.id)
           return
         }
-        // Se não houver usuário, cria um padrão
-        const email = 'demo@mycash.local'
-        const name = 'Demo User'
+
+        // Se não existir, cria o usuário na tabela users
         const { data: inserted, error: insertError } = await supabase
           .from('users')
-          .insert({ email, name })
+          .insert({
+            email: user.email || '',
+            name: user.email?.split('@')[0] || 'Usuário',
+          })
           .select('*')
           .single()
+
         if (insertError) {
           console.error('Erro ao criar usuário:', insertError)
           return
         }
-        if (inserted) setUserId(inserted.id)
+
+        if (inserted) {
+          setUserId(inserted.id)
+        }
       } catch (err) {
         console.error('Erro inesperado ao garantir usuário:', err)
       }
     }
+
     ensureUser()
-  }, [])
+  }, [user])
 
   useEffect(() => {
     if (!userId) return

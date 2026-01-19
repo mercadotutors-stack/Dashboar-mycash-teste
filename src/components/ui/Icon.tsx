@@ -47,4 +47,6 @@ const iconMap: Record<string, string> = {
   edit: 'edit',
   person_add: 'person_add',
   credit_card: 'credit_card',
+  lock_reset: 'lock_reset',
+  lock: 'lock',
 }

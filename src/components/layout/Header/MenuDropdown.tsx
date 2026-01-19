@@ -1,6 +1,8 @@
 import { NAVIGATION_ITEMS } from '../../../constants'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../../ui/Icon'
+import { useAuth } from '../../../context/AuthContext'
+import { ROUTES } from '../../../constants'
 
 interface MenuDropdownProps {
   isOpen: boolean
@@ -14,9 +16,17 @@ interface MenuDropdownProps {
 
 export function MenuDropdown({ isOpen, onClose, user }: MenuDropdownProps) {
   const location = useLocation()
+  const { signOut } = useAuth()
+  const navigate = useNavigate()
 
   const handleNavClick = () => {
     onClose()
+  }
+
+  const handleLogout = async () => {
+    await signOut()
+    onClose()
+    navigate(ROUTES.LOGIN)
   }
 
   return (
@@ -153,7 +163,7 @@ export function MenuDropdown({ isOpen, onClose, user }: MenuDropdownProps) {
                 transition-colors duration-150
                 hover:opacity-90
               "
-              onClick={onClose}
+              onClick={handleLogout}
             >
               <Icon name="logout" className="w-5 h-5 text-white" />
               <span

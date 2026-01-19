@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { MenuDropdown } from './MenuDropdown'
-
-const mockUser = {
-  name: 'Lucas Marte',
-  email: 'lucasmarte@gmail.com',
-  avatar: 'LM',
-}
+import { useAuth } from '../../../context/AuthContext'
 
 export function HeaderMobile() {
   const [isOpen, setIsOpen] = useState(false)
+  const { user } = useAuth()
 
   const toggle = () => setIsOpen((prev) => !prev)
   const close = () => setIsOpen(false)
+
+  const userEmail = user?.email || ''
+  const userName = userEmail.split('@')[0] || 'Usuário'
+  const userInitial = userName.charAt(0).toUpperCase()
 
   return (
     <>
@@ -55,11 +55,19 @@ export function HeaderMobile() {
           "
           aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
         >
-          <span className="text-base leading-5 tracking-[0.3px]">{mockUser.avatar}</span>
+          <span className="text-base leading-5 tracking-[0.3px]">{userInitial}</span>
         </button>
       </header>
 
-      <MenuDropdown isOpen={isOpen} onClose={close} user={mockUser} />
+      <MenuDropdown
+        isOpen={isOpen}
+        onClose={close}
+        user={{
+          name: userName,
+          email: userEmail,
+          avatar: userInitial,
+        }}
+      />
       {/* Spacer to empurrar conteúdo para baixo do header fixo */}
       <div className="h-20 lg:hidden" aria-hidden />
     </>

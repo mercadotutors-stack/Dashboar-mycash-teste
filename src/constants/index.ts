@@ -6,6 +6,10 @@
  * Rotas principais da aplicação
  */
 export const ROUTES = {
+  LOGIN: '/login',
+  SIGNUP: '/signup',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/',
   CARDS: '/cards',
   ACCOUNTS: '/accounts',
