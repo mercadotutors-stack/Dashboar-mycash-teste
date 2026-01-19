@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { CurrencyInput } from '../ui/CurrencyInput'
 
 type Props = {
   open: boolean
@@ -18,10 +19,10 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
 
   const [name, setName] = useState('')
   const [holderId, setHolderId] = useState('')
-  const [balance, setBalance] = useState('')
+  const [balance, setBalance] = useState<number>(0)
   const [closingDay, setClosingDay] = useState('')
   const [dueDay, setDueDay] = useState('')
-  const [limitValue, setLimitValue] = useState('')
+  const [limitValue, setLimitValue] = useState<number>(0)
   const [lastDigits, setLastDigits] = useState('')
   const [theme, setTheme] = useState<'black' | 'lime' | 'white' | ''>('')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -32,11 +33,11 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
       if (account) {
         setName(account.name)
         setHolderId(account.holderId)
-        setBalance(account.balance.toString())
+        setBalance(account.balance)
       } else if (card) {
         setName(card.name)
         setHolderId(card.holderId)
-        setLimitValue(card.limit.toString())
+        setLimitValue(card.limit)
         setClosingDay(card.closingDay.toString())
         setDueDay(card.dueDay.toString())
         setTheme(card.theme)
@@ -57,7 +58,7 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
       const due = Number(dueDay)
       if (!closing || closing < 1 || closing > 31) next.closingDay = 'Dia entre 1 e 31.'
       if (!due || due < 1 || due > 31) next.dueDay = 'Dia entre 1 e 31.'
-      if (!limitValue || Number(limitValue) <= 0) next.limitValue = 'Limite deve ser maior que zero.'
+      if (!limitValue || limitValue <= 0) next.limitValue = 'Limite deve ser maior que zero.'
       if (!theme) next.theme = 'Selecione um tema.'
       if (lastDigits && lastDigits.length !== 4) next.lastDigits = 'Use exatamente 4 dígitos.'
     }
@@ -73,7 +74,7 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
         await updateBankAccount(accountId, {
           name: name.trim(),
           holderId,
-          balance: Number(balance),
+          balance: balance,
           accountType: account?.accountType,
         })
         setToast('Conta atualizada com sucesso!')
@@ -81,7 +82,7 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
         await updateCreditCard(cardId, {
           name: name.trim(),
           holderId,
-          limit: Number(limitValue),
+          limit: limitValue,
           closingDay: Number(closingDay),
           dueDay: Number(dueDay),
           theme: theme as 'black' | 'lime' | 'white',
@@ -189,14 +190,11 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
             {!isCard ? (
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-text-primary">Saldo</label>
-                <input
-                  type="number"
+                <CurrencyInput
                   value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                  className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                    errors.balance ? 'border-red-500' : 'border-border'
-                  }`}
+                  onChange={(value) => setBalance(value)}
                   placeholder="0,00"
+                  error={!!errors.balance}
                 />
                 {errors.balance ? <p className="text-sm text-red-600">{errors.balance}</p> : null}
               </div>
@@ -235,14 +233,11 @@ export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-text-primary">Limite Total</label>
-                  <input
-                    type="number"
+                  <CurrencyInput
                     value={limitValue}
-                    onChange={(e) => setLimitValue(e.target.value)}
-                    className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                      errors.limitValue ? 'border-red-500' : 'border-border'
-                    }`}
+                    onChange={(value) => setLimitValue(value)}
                     placeholder="0,00"
+                    error={!!errors.limitValue}
                   />
                   {errors.limitValue ? <p className="text-sm text-red-600">{errors.limitValue}</p> : null}
                 </div>

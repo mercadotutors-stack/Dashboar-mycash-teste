@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { CurrencyInput } from '../ui/CurrencyInput'
 
 type Props = {
   open: boolean
@@ -14,7 +15,7 @@ export function AddMemberModal({ open, onClose }: Props) {
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
-  const [income, setIncome] = useState('')
+  const [income, setIncome] = useState<number>(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [toast, setToast] = useState<string | null>(null)
 
@@ -23,7 +24,7 @@ export function AddMemberModal({ open, onClose }: Props) {
       setName('')
       setRole('')
       setAvatarUrl('')
-      setIncome('')
+      setIncome(0)
       setErrors({})
     }
   }, [open])
@@ -43,7 +44,7 @@ export function AddMemberModal({ open, onClose }: Props) {
         name: name.trim(),
         role: role.trim(),
         email: '',
-        monthlyIncome: income ? Number(income) : 0,
+        monthlyIncome: income,
         avatarUrl: avatarUrl || undefined,
       })
       setToast('Membro adicionado com sucesso!')
@@ -147,12 +148,10 @@ export function AddMemberModal({ open, onClose }: Props) {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-text-primary">Renda Mensal Estimada (opcional)</label>
-              <input
-                type="number"
+              <CurrencyInput
                 value={income}
-                onChange={(e) => setIncome(e.target.value)}
-                className="h-12 rounded-full border border-border bg-white px-4 text-body text-text-primary outline-none"
-                placeholder="R$ 0,00"
+                onChange={(value) => setIncome(value)}
+                placeholder="0,00"
               />
             </div>
           </div>

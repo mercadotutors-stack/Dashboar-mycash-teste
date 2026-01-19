@@ -52,7 +52,7 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
       title={!isExpanded ? label : undefined}
     >
       {/* Ícone */}
-      <span className="flex-shrink-0 w-4 h-4">
+      <span className="flex-shrink-0 w-5 h-5">
         <Icon
           name={iconName}
           className={`
@@ -72,8 +72,8 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
           style={{
             fontFamily: 'Inter, sans-serif',
             fontWeight: 600,
-            fontSize: '22px',
-            lineHeight: '28px',
+            fontSize: '18px',
+            lineHeight: '24px',
             letterSpacing: '0.3px',
           }}
         >
@@ -96,21 +96,6 @@ export function SidebarItem({ label, path, iconName, isExpanded }: SidebarItemPr
             z-50
           "
         >
-          {label}
-        </span>
-      )}
-
-      {/* Tooltip (apenas quando colapsado) */}
-      {!isExpanded && (
-        <span className="
-          absolute left-full ml-sm
-          px-sm py-xs
-          bg-gray-800 text-white text-small whitespace-nowrap
-          rounded-md
-          opacity-0 pointer-events-none group-hover:opacity-100
-          transition-opacity duration-200 delay-300 z-50
-          shadow-lg
-        ">
           {label}
         </span>
       )}

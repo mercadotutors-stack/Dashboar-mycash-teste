@@ -41,35 +41,37 @@ export default function Accounts() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-page py-6 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-heading-xl font-bold text-text-primary">Contas Bancárias</h1>
-          <p className="text-text-secondary text-body">
+          <p className="text-text-secondary text-body hidden sm:block">
             Gerencie suas contas correntes, poupanças e investimentos
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link
             to={ROUTES.CARDS}
-            className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 font-semibold flex items-center gap-2"
+            className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 font-semibold flex items-center gap-2 text-sm sm:text-base"
           >
             <Icon name="credit-card" className="w-5 h-5" />
-            Ver Cartões
+            <span className="hidden sm:inline">Ver Cartões</span>
+            <span className="sm:hidden">Cartões</span>
           </Link>
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="h-11 px-4 rounded-full bg-black text-white font-semibold flex items-center gap-2"
+            className="h-11 px-4 rounded-full bg-black text-white font-semibold flex items-center gap-2 text-sm sm:text-base"
           >
             <Icon name="add" className="w-5 h-5" />
-            Nova Conta
+            <span className="hidden sm:inline">Nova Conta</span>
+            <span className="sm:hidden">Nova</span>
           </button>
         </div>
       </header>
 
       {/* Filtros e Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1">
           <span className="text-sm text-text-secondary">Saldo Total</span>
           <span className="text-heading-lg font-bold text-text-primary">{formatCurrency(totalBalance)}</span>
@@ -93,7 +95,7 @@ export default function Accounts() {
       </div>
 
       {/* Filtros de Tipo */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap overflow-x-auto pb-2 -mx-4 sm:mx-0 px-4 sm:px-0">
         <button
           onClick={() => setMode('all')}
           className={`h-10 px-4 rounded-full border text-sm font-semibold ${
@@ -194,14 +196,14 @@ export default function Accounts() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setPresetAccount(account.id)
                       setShowNewTx(true)
                     }}
-                    className="flex-1 h-10 px-4 rounded-full bg-black text-white text-sm font-semibold hover:opacity-90"
+                    className="flex-1 min-w-[140px] h-10 px-4 rounded-full bg-black text-white text-sm font-semibold hover:opacity-90"
                   >
                     Nova Transação
                   </button>
@@ -231,7 +233,7 @@ export default function Accounts() {
                         setTimeout(() => setToast(null), 3000)
                       }
                     }}
-                    className="h-10 w-10 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                    className="h-10 w-10 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center flex-shrink-0"
                     aria-label="Excluir conta"
                   >
                     <Icon name="delete" className="w-5 h-5" />

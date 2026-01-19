@@ -19,11 +19,12 @@ export function HeaderMobile() {
         className="
           fixed top-0 left-0 right-0 z-40
           flex items-center justify-between
-          px-5 py-4
+          px-4 sm:px-5 py-3 sm:py-4
           bg-bg-primary
           border-b border-border
           shadow-sm
           lg:hidden
+          h-16 sm:h-20
         "
       >
         <div className="flex items-center">
@@ -68,8 +69,6 @@ export function HeaderMobile() {
           avatar: userInitial,
         }}
       />
-      {/* Spacer to empurrar conteúdo para baixo do header fixo */}
-      <div className="h-20 lg:hidden" aria-hidden />
     </>
   )
 }

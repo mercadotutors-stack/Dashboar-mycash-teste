@@ -27,16 +27,17 @@ export default function Cards() {
   const emptyState = sortedCards.length === 0
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-page py-6 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h1 className="text-heading-xl font-bold text-text-primary">Cartões de Crédito</h1>
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="h-11 px-4 rounded-full bg-black text-white font-semibold flex items-center gap-2"
+          className="h-11 px-4 rounded-full bg-black text-white font-semibold flex items-center gap-2 text-sm sm:text-base"
         >
           <Icon name="add" className="w-5 h-5" />
-          Novo Cartão
+          <span className="hidden sm:inline">Novo Cartão</span>
+          <span className="sm:hidden">Novo</span>
         </button>
       </header>
 
@@ -53,7 +54,7 @@ export default function Cards() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {sortedCards.map((card) => {
             const available = card.limit - card.currentBill
             const usage = (card.currentBill / card.limit) * 100
@@ -116,14 +117,14 @@ export default function Cards() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setPresetCard(card.id)
                       setShowNewTx(true)
                     }}
-                    className="flex-1 h-10 px-4 rounded-full bg-black text-white text-sm font-semibold hover:opacity-90"
+                    className="flex-1 min-w-[140px] h-10 px-4 rounded-full bg-black text-white text-sm font-semibold hover:opacity-90"
                   >
                     Adicionar Despesa
                   </button>
@@ -153,7 +154,7 @@ export default function Cards() {
                         setTimeout(() => setToast(null), 3000)
                       }
                     }}
-                    className="h-10 w-10 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                    className="h-10 w-10 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center flex-shrink-0"
                     aria-label="Excluir cartão"
                   >
                     <Icon name="delete" className="w-5 h-5" />

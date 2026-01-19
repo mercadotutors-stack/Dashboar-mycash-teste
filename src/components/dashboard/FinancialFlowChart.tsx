@@ -8,16 +8,8 @@ import {
   YAxis,
 } from 'recharts'
 import { Icon } from '../ui/Icon'
-
-const data = [
-  { month: 'Jan', income: 0, expense: 0 },
-  { month: 'Fev', income: 9000, expense: 2500 },
-  { month: 'Mar', income: 11200, expense: 5000 },
-  { month: 'Abr', income: 9500, expense: 7500 },
-  { month: 'Mai', income: 7000, expense: 6500 },
-  { month: 'Jun', income: 8200, expense: 5200 },
-  { month: 'Jul', income: 12500, expense: 5700 },
-]
+import { useFinance } from '../../context/FinanceContext'
+import { useMemo } from 'react'
 
 const formatCompactCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', {
@@ -34,9 +26,54 @@ const formatFullCurrency = (value: number) =>
     minimumFractionDigits: 2,
   }).format(value)
 
+// Nomes dos meses em português
+const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
 export function FinancialFlowChart() {
+  const { transactions } = useFinance()
+
+  // Agrupa transações por mês (últimos 7 meses)
+  const chartData = useMemo(() => {
+    const now = new Date()
+    const months: Array<{ month: string; monthIndex: number; year: number; income: number; expense: number }> = []
+    
+    // Cria array dos últimos 7 meses
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({
+        month: monthNames[date.getMonth()],
+        monthIndex: date.getMonth(),
+        year: date.getFullYear(),
+        income: 0,
+        expense: 0,
+      })
+    }
+
+    // Agrupa transações por mês
+    transactions.forEach((tx) => {
+      const txDate = new Date(tx.date)
+      const monthIndex = txDate.getMonth()
+      const year = txDate.getFullYear()
+      
+      const monthData = months.find((m) => m.monthIndex === monthIndex && m.year === year)
+      if (monthData) {
+        if (tx.type === 'income') {
+          monthData.income += tx.amount
+        } else {
+          monthData.expense += tx.amount
+        }
+      }
+    })
+
+    return months.map((m) => ({
+      month: m.month,
+      income: m.income,
+      expense: m.expense,
+    }))
+  }, [transactions])
+
   return (
-    <div className="rounded-xl border border-border bg-white p-8 shadow-sm">
+    <div className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Icon name="chart" className="w-6 h-6 text-text-primary" />
@@ -56,7 +93,7 @@ export function FinancialFlowChart() {
 
       <div className="w-full rounded-lg bg-bg-secondary/60 px-2 pb-2" style={{ height: 300 }}>
         <ResponsiveContainer>
-          <AreaChart data={data} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#C4E703" stopOpacity={0.3} />

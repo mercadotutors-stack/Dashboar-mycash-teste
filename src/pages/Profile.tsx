@@ -52,7 +52,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-page py-6 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3">
         <h1 className="text-heading-xl font-bold text-text-primary">Perfil</h1>
         <div className="flex border-b border-border gap-4">
@@ -78,7 +78,7 @@ export default function Profile() {
       {tab === 'info' ? (
         <div className="flex flex-col gap-6">
           {mainUser ? (
-            <div className="rounded-xl border border-border bg-white p-6 flex flex-col md:flex-row gap-4 items-center">
+            <div className="rounded-xl border border-border bg-white p-4 sm:p-6 flex flex-col md:flex-row gap-4 items-center">
               <div className="w-28 h-28 rounded-full bg-gray-100 border border-border flex items-center justify-center text-heading-lg font-bold">
                 {mainUser.name.charAt(0)}
               </div>
@@ -100,7 +100,7 @@ export default function Profile() {
             </div>
           ) : null}
 
-          <div className="rounded-xl border border-border bg-white p-6 flex flex-col gap-4">
+          <div className="rounded-xl border border-border bg-white p-4 sm:p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-heading-md font-semibold text-text-primary">Membros da Família</h3>
               <button
@@ -318,7 +318,7 @@ export default function Profile() {
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-5 flex flex-col gap-3">
+    <div className="rounded-xl border border-border bg-white p-4 sm:p-5 flex flex-col gap-3">
       <h3 className="text-heading-md font-semibold text-text-primary">{title}</h3>
       {children}
     </div>

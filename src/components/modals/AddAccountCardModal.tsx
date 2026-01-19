@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { CurrencyInput } from '../ui/CurrencyInput'
 
 type Props = {
   open: boolean
@@ -14,10 +15,10 @@ export function AddAccountCardModal({ open, onClose }: Props) {
   const [mode, setMode] = useState<Mode>('bank')
   const [name, setName] = useState('')
   const [holderId, setHolderId] = useState('')
-  const [balance, setBalance] = useState('')
+  const [balance, setBalance] = useState<number>(0)
   const [closingDay, setClosingDay] = useState('')
   const [dueDay, setDueDay] = useState('')
-  const [limitValue, setLimitValue] = useState('')
+  const [limitValue, setLimitValue] = useState<number>(0)
   const [lastDigits, setLastDigits] = useState('')
   const [theme, setTheme] = useState<'black' | 'lime' | 'white' | ''>('')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -28,10 +29,10 @@ export function AddAccountCardModal({ open, onClose }: Props) {
       setMode('bank')
       setName('')
       setHolderId('')
-      setBalance('')
+      setBalance(0)
       setClosingDay('')
       setDueDay('')
-      setLimitValue('')
+      setLimitValue(0)
       setLastDigits('')
       setTheme('')
       setErrors({})
@@ -43,13 +44,13 @@ export function AddAccountCardModal({ open, onClose }: Props) {
     if (!name.trim() || name.trim().length < 3) next.name = 'Informe um nome com pelo menos 3 caracteres.'
     if (!holderId) next.holderId = 'Selecione o titular.'
     if (mode === 'bank') {
-      if (!balance || Number(balance) === 0) next.balance = 'Informe o saldo inicial.'
+      if (!balance || balance === 0) next.balance = 'Informe o saldo inicial.'
     } else {
       const closing = Number(closingDay)
       const due = Number(dueDay)
       if (!closing || closing < 1 || closing > 31) next.closingDay = 'Dia entre 1 e 31.'
       if (!due || due < 1 || due > 31) next.dueDay = 'Dia entre 1 e 31.'
-      if (!limitValue || Number(limitValue) <= 0) next.limitValue = 'Limite deve ser maior que zero.'
+      if (!limitValue || limitValue <= 0) next.limitValue = 'Limite deve ser maior que zero.'
       if (!theme) next.theme = 'Selecione um tema.'
       if (lastDigits && lastDigits.length !== 4) next.lastDigits = 'Use exatamente 4 dígitos.'
     }
@@ -65,7 +66,7 @@ export function AddAccountCardModal({ open, onClose }: Props) {
         await addBankAccount({
           name: name.trim(),
           holderId,
-          balance: Number(balance),
+          balance: balance,
           bank: undefined,
           accountType: 'checking',
         })
@@ -74,7 +75,7 @@ export function AddAccountCardModal({ open, onClose }: Props) {
         await addCreditCard({
           name: name.trim(),
           holderId,
-          limit: Number(limitValue),
+          limit: limitValue,
           currentBill: 0,
           closingDay: Number(closingDay),
           dueDay: Number(dueDay),
@@ -181,14 +182,11 @@ export function AddAccountCardModal({ open, onClose }: Props) {
             {mode === 'bank' ? (
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-text-primary">Saldo Inicial</label>
-                <input
-                  type="number"
+                <CurrencyInput
                   value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                  className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                    errors.balance ? 'border-red-500' : 'border-border'
-                  }`}
-                  placeholder="R$ 0,00"
+                  onChange={(value) => setBalance(value)}
+                  placeholder="0,00"
+                  error={!!errors.balance}
                 />
                 {errors.balance ? <p className="text-sm text-red-600">{errors.balance}</p> : null}
               </div>
@@ -226,14 +224,11 @@ export function AddAccountCardModal({ open, onClose }: Props) {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-text-primary">Limite Total</label>
-                    <input
-                      type="number"
+                    <CurrencyInput
                       value={limitValue}
-                      onChange={(e) => setLimitValue(e.target.value)}
-                      className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                        errors.limitValue ? 'border-red-500' : 'border-border'
-                      }`}
-                      placeholder="R$ 0,00"
+                      onChange={(value) => setLimitValue(value)}
+                      placeholder="0,00"
+                      error={!!errors.limitValue}
                     />
                     {errors.limitValue ? <p className="text-sm text-red-600">{errors.limitValue}</p> : null}
                   </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { CurrencyInput } from '../ui/CurrencyInput'
 import type { TransactionType } from '../../types'
 
 type Props = {
@@ -15,7 +16,7 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
   const transaction = transactionId ? transactions.find((t) => t.id === transactionId) : null
 
   const [type, setType] = useState<TransactionType>('income')
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState<number>(0)
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [memberId, setMemberId] = useState<string | null>(null)
@@ -27,7 +28,7 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
   useEffect(() => {
     if (open && transaction) {
       setType(transaction.type)
-      setAmount(transaction.amount.toFixed(2).replace('.', ','))
+      setAmount(transaction.amount)
       setDescription(transaction.description)
       setCategory(transaction.category)
       setMemberId(transaction.memberId)
@@ -59,8 +60,7 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
 
   const validate = () => {
     const nextErrors: Record<string, string> = {}
-    const amountNumber = Number(amount.replace(/\./g, '').replace(',', '.'))
-    if (!amountNumber || amountNumber <= 0) nextErrors.amount = 'Informe um valor maior que zero.'
+    if (!amount || amount <= 0) nextErrors.amount = 'Informe um valor maior que zero.'
     if (!description || description.trim().length < 3)
       nextErrors.description = 'Descrição deve ter pelo menos 3 caracteres.'
     if (!category) nextErrors.category = 'Selecione uma categoria.'
@@ -75,10 +75,9 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
     if (!validate() || !transaction) return
 
     try {
-      const amountNumber = Number(amount.replace(/\./g, '').replace(',', '.'))
       await updateTransaction(transaction.id, {
         type,
-        amount: amountNumber,
+        amount: amount,
         description: description.trim(),
         category,
         date: new Date(date),
@@ -169,20 +168,12 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
             {/* Valor */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-text-primary">Valor da Transação</label>
-              <div
-                className={`flex items-center rounded-full border bg-white px-4 h-14 ${
-                  errors.amount ? 'border-red-500' : 'border-border'
-                }`}
-              >
-                <span className="text-text-secondary mr-2">R$</span>
-                <input
-                  type="text"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^\d,]/g, ''))}
-                  className="flex-1 outline-none text-heading-md font-bold text-text-primary bg-transparent"
-                  placeholder="0,00"
-                />
-              </div>
+              <CurrencyInput
+                value={amount}
+                onChange={(value) => setAmount(value)}
+                placeholder="0,00"
+                error={!!errors.amount}
+              />
               {errors.amount ? <p className="text-sm text-red-600">{errors.amount}</p> : null}
             </div>
 

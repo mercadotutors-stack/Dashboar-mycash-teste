@@ -1,52 +1,92 @@
+import {
+  HomeIcon,
+  CreditCardIcon,
+  BuildingLibraryIcon,
+  ChartBarIcon,
+  UserIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Bars3Icon,
+  XMarkIcon,
+  ArrowRightOnRectangleIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  PlusIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ChartPieIcon,
+  ListBulletIcon,
+  ArrowTopRightOnSquareIcon,
+  ArrowPathIcon,
+  WalletIcon,
+  TrashIcon,
+  PencilIcon,
+  UserPlusIcon,
+  LockClosedIcon,
+  KeyIcon,
+  CurrencyDollarIcon,
+  ArrowTrendingDownIcon,
+} from '@heroicons/react/24/outline'
+import type { ComponentType, SVGProps } from 'react'
+
 interface IconProps {
   name: string
   className?: string
 }
 
 /**
- * Usa Google Material Symbols Outlined (via font import em index.html).
+ * Componente de ícone usando Heroicons Outline (mais moderno)
  */
 export function Icon({ name, className = '' }: IconProps) {
-  const materialName = iconMap[name] ?? name
+  const IconComponent = iconMap[name] as ComponentType<SVGProps<SVGSVGElement>> | undefined
 
-  return (
-    <span
-      className={`material-symbols-outlined inline-flex items-center justify-center ${className}`}
-      aria-hidden="true"
-    >
-      {materialName}
-    </span>
-  )
+  if (!IconComponent) {
+    console.warn(`Ícone "${name}" não encontrado. Usando fallback.`)
+    return <span className={`inline-flex items-center justify-center ${className}`} aria-hidden="true" />
+  }
+
+  return <IconComponent className={`inline-flex items-center justify-center ${className}`} aria-hidden="true" />
 }
 
-const iconMap: Record<string, string> = {
-  home: 'home',
-  'credit-card': 'credit_card',
-  transactions: 'stacked_bar_chart',
-  user: 'person',
-  chevronLeft: 'chevron_left',
-  chevronRight: 'chevron_right',
-  menu: 'menu',
-  close: 'close',
-  logout: 'logout',
-  search: 'search',
-  tune: 'tune',
-  add: 'add',
-  calendar: 'calendar_month',
-  check: 'check_circle',
-  arrowUp: 'arrow_upward',
-  arrowDown: 'arrow_downward',
-  chart: 'query_stats',
-  list: 'checklist',
-  'north-east': 'north_east',
-  'south-west': 'south_west',
-  repeat: 'repeat',
-  account_balance: 'account_balance',
-  wallet: 'account_balance_wallet',
-  delete: 'delete',
-  edit: 'edit',
-  person_add: 'person_add',
-  credit_card: 'credit_card',
-  lock_reset: 'lock_reset',
-  lock: 'lock',
+const iconMap: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+  // Navegação
+  home: HomeIcon,
+  'credit-card': CreditCardIcon,
+  credit_card: CreditCardIcon,
+  account_balance: BuildingLibraryIcon,
+  transactions: ChartBarIcon,
+  user: UserIcon,
+  person: UserIcon,
+
+  // Ações
+  chevronLeft: ChevronLeftIcon,
+  chevronRight: ChevronRightIcon,
+  menu: Bars3Icon,
+  close: XMarkIcon,
+  logout: ArrowRightOnRectangleIcon,
+  search: MagnifyingGlassIcon,
+  tune: FunnelIcon,
+  add: PlusIcon,
+  calendar: CalendarIcon,
+  check: CheckCircleIcon,
+  arrowUp: ArrowUpIcon,
+  arrowDown: ArrowDownIcon,
+  chart: ChartPieIcon,
+  list: ListBulletIcon,
+  'north-east': ArrowTopRightOnSquareIcon,
+  'south-west': ArrowTrendingDownIcon,
+  repeat: ArrowPathIcon,
+  wallet: WalletIcon,
+  delete: TrashIcon,
+  edit: PencilIcon,
+  person_add: UserPlusIcon,
+  lock_reset: KeyIcon,
+  lock: LockClosedIcon,
+
+  // Compatibilidade com Material Symbols
+  attach_money: CurrencyDollarIcon,
+  south_west: ArrowTrendingDownIcon,
+  north_east: ArrowTopRightOnSquareIcon,
 }

@@ -129,7 +129,7 @@ export function TransactionsTable() {
   return (
     <section
       ref={tableRef}
-      className="rounded-xl border border-border bg-white p-8 shadow-sm w-full flex flex-col gap-6"
+      className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm w-full flex flex-col gap-4 sm:gap-6"
     >
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h2 className="text-heading-lg font-semibold text-text-primary">Extrato detalhado</h2>
@@ -163,8 +163,8 @@ export function TransactionsTable() {
         </div>
       </header>
 
-      <div className="w-full overflow-x-auto">
-        <div className="min-w-[1024px] rounded-xl border border-border">
+      <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="min-w-[800px] sm:min-w-[1024px] rounded-xl border border-border">
           <div className="grid grid-cols-[60px,140px,1.2fr,1fr,1.1fr,120px,120px,100px] bg-gray-50 text-text-primary font-semibold text-body rounded-t-xl">
             <div className="px-4 py-3">Membro</div>
             <div className="px-4 py-3">Datas</div>

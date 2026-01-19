@@ -165,7 +165,7 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-white p-8 shadow-sm flex flex-col gap-4">
+    <section className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm flex flex-col gap-4">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Icon name="credit-card" className="w-5 h-5 text-text-primary" />

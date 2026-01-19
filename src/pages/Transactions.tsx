@@ -116,28 +116,30 @@ export default function Transactions() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-page py-6 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h1 className="text-heading-xl font-bold text-text-primary">Transações</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={exportCSV}
             className="h-10 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 text-sm"
           >
-            Exportar CSV
+            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
           <button
             onClick={() => setShowNew(true)}
             className="h-10 px-4 rounded-full bg-black text-white font-semibold flex items-center gap-2 text-sm"
           >
             <Icon name="add" className="w-5 h-5" />
-            Nova Transação
+            <span className="hidden sm:inline">Nova Transação</span>
+            <span className="sm:hidden">Nova</span>
           </button>
         </div>
       </header>
 
       {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <SummaryCard label="Total de receitas" value={formatCurrency(totals.incomes)} positive />
         <SummaryCard label="Total de despesas" value={formatCurrency(totals.expenses)} />
         <SummaryCard
@@ -149,8 +151,8 @@ export default function Transactions() {
       </div>
 
       {/* Filtros */}
-      <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="rounded-xl border border-border bg-white p-4 sm:p-6 flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <Input
             label="Buscar"
             value={search}
@@ -208,8 +210,10 @@ export default function Transactions() {
       </div>
 
       {/* Tabela */}
-      <div className="rounded-xl border border-border bg-white overflow-hidden">
-        <div className="grid grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] bg-gray-50 text-text-primary font-semibold text-body">
+      <div className="rounded-xl border border-border bg-white overflow-hidden -mx-4 sm:mx-0">
+        <div className="overflow-x-auto">
+          <div className="min-w-[900px] sm:min-w-full">
+            <div className="grid grid-cols-[140px,1.2fr,1fr,1fr,100px,100px,90px] sm:grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] bg-gray-50 text-text-primary font-semibold text-body text-xs sm:text-sm">
           <div className="px-4 py-3 flex items-center gap-2 cursor-pointer" onClick={() => handleSort('date')}>
             Data
             {sortField === 'date' ? <Icon name={sortOrder === 'asc' ? 'north-east' : 'south-west'} className="w-4 h-4" /> : null}
@@ -237,7 +241,7 @@ export default function Transactions() {
             return (
               <div
                 key={tx.id}
-                className={`grid grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] items-center px-2 py-3 ${rowBg} hover:bg-gray-100 transition`}
+                className={`grid grid-cols-[140px,1.2fr,1fr,1fr,100px,100px,90px] sm:grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] items-center px-2 py-3 ${rowBg} hover:bg-gray-100 transition text-xs sm:text-sm`}
               >
                 <div className="px-2 text-text-secondary text-sm">{tx.date.toLocaleDateString('pt-BR')}</div>
                 <div className="px-2 text-text-primary font-semibold flex items-center gap-2">
@@ -293,6 +297,8 @@ export default function Transactions() {
             )
           })
         )}
+          </div>
+        </div>
       </div>
 
       {/* Paginação */}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { CurrencyInput } from '../ui/CurrencyInput'
 import type { TransactionType } from '../../types'
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
 
 type FormState = {
   type: TransactionType
-  amount: string
+  amount: number
   description: string
   category: string
   memberId: string | null
@@ -25,7 +26,7 @@ type FormState = {
 
 const defaultState: FormState = {
   type: 'income',
-  amount: '',
+  amount: 0,
   description: '',
   category: '',
   memberId: null,
@@ -99,8 +100,7 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
 
   const validate = () => {
     const nextErrors: Record<string, string> = {}
-    const amountNumber = Number(state.amount.replace(/\./g, '').replace(',', '.'))
-    if (!amountNumber || amountNumber <= 0) nextErrors.amount = 'Informe um valor maior que zero.'
+    if (!state.amount || state.amount <= 0) nextErrors.amount = 'Informe um valor maior que zero.'
     if (!state.description || state.description.trim().length < 3)
       nextErrors.description = 'Descrição deve ter pelo menos 3 caracteres.'
     if (!state.category) nextErrors.category = 'Selecione ou crie uma categoria.'
@@ -118,10 +118,9 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
     if (!validate()) return
 
     try {
-      const amountNumber = Number(state.amount.replace(/\./g, '').replace(',', '.'))
       await addTransaction({
         type: state.type,
-        amount: amountNumber,
+        amount: state.amount,
         description: state.description.trim(),
         category: state.category,
         date: new Date(),
@@ -197,21 +196,12 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
           {/* Valor */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-text-primary">Valor da Transação</label>
-            <div
-              className={`flex items-center rounded-full border bg-white px-4 h-14 ${
-                errors.amount ? 'border-red-500' : 'border-border'
-              }`}
-            >
-              <span className="text-text-secondary mr-2">R$</span>
-              <input
-                type="number"
-                min="0"
-                value={state.amount}
-                onChange={(e) => handleChange('amount', e.target.value)}
-                className="w-full outline-none text-body text-text-primary bg-transparent"
-                placeholder="0,00"
-              />
-            </div>
+            <CurrencyInput
+              value={state.amount}
+              onChange={(value) => handleChange('amount', value)}
+              placeholder="0,00"
+              error={!!errors.amount}
+            />
             {errors.amount ? <p className="text-sm text-red-600">{errors.amount}</p> : null}
           </div>
 
