@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useFinance } from '../context/FinanceContext'
 import { Icon } from '../components/ui/Icon'
 import { AddAccountCardModal } from '../components/modals/AddAccountCardModal'
+import { EditAccountCardModal } from '../components/modals/EditAccountCardModal'
 import { NewTransactionModal } from '../components/modals/NewTransactionModal'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../constants'
@@ -10,11 +11,14 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export default function Accounts() {
-  const { bankAccounts, familyMembers } = useFinance()
+  const { bankAccounts, familyMembers, deleteBankAccount } = useFinance()
   const [showAdd, setShowAdd] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [editAccountId, setEditAccountId] = useState<string | null>(null)
   const [showNewTx, setShowNewTx] = useState(false)
   const [presetAccount, setPresetAccount] = useState<string | undefined>(undefined)
   const [mode, setMode] = useState<'all' | 'checking' | 'savings' | 'investment'>('all')
+  const [toast, setToast] = useState<string | null>(null)
 
   const filteredAccounts = useMemo(() => {
     if (mode === 'all') return bankAccounts
@@ -204,11 +208,33 @@ export default function Accounts() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      // TODO: Implementar modal de edição
+                      setEditAccountId(account.id)
+                      setShowEdit(true)
                     }}
                     className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100"
                   >
                     Editar
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      if (!confirm(`Tem certeza que deseja excluir a conta "${account.name}"? Esta ação não pode ser desfeita.`)) {
+                        return
+                      }
+                      try {
+                        await deleteBankAccount(account.id)
+                        setToast('Conta excluída com sucesso!')
+                        setTimeout(() => setToast(null), 2000)
+                      } catch (err) {
+                        console.error('Erro ao excluir conta:', err)
+                        setToast('Erro ao excluir conta')
+                        setTimeout(() => setToast(null), 3000)
+                      }
+                    }}
+                    className="h-10 w-10 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                    aria-label="Excluir conta"
+                  >
+                    <Icon name="delete" className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -218,6 +244,14 @@ export default function Accounts() {
       )}
 
       <AddAccountCardModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <EditAccountCardModal
+        open={showEdit}
+        onClose={() => {
+          setShowEdit(false)
+          setEditAccountId(null)
+        }}
+        accountId={editAccountId ?? undefined}
+      />
       <NewTransactionModal
         open={showNewTx}
         onClose={() => {
@@ -226,6 +260,12 @@ export default function Accounts() {
         }}
         presetAccountId={presetAccount}
       />
+
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
+          {toast}
+        </div>
+      ) : null}
     </div>
   )
 }

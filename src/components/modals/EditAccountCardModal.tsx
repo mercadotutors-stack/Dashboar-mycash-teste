@@ -5,13 +5,17 @@ import { Icon } from '../ui/Icon'
 type Props = {
   open: boolean
   onClose: () => void
+  accountId?: string
+  cardId?: string
 }
 
-type Mode = 'bank' | 'card'
+export function EditAccountCardModal({ open, onClose, accountId, cardId }: Props) {
+  const { bankAccounts, creditCards, updateBankAccount, updateCreditCard, deleteBankAccount, deleteCreditCard, familyMembers } = useFinance()
+  
+  const account = accountId ? bankAccounts.find((a) => a.id === accountId) : null
+  const card = cardId ? creditCards.find((c) => c.id === cardId) : null
+  const isCard = !!card
 
-export function AddAccountCardModal({ open, onClose }: Props) {
-  const { addBankAccount, addCreditCard, familyMembers } = useFinance()
-  const [mode, setMode] = useState<Mode>('bank')
   const [name, setName] = useState('')
   const [holderId, setHolderId] = useState('')
   const [balance, setBalance] = useState('')
@@ -25,25 +29,29 @@ export function AddAccountCardModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open) {
-      setMode('bank')
-      setName('')
-      setHolderId('')
-      setBalance('')
-      setClosingDay('')
-      setDueDay('')
-      setLimitValue('')
-      setLastDigits('')
-      setTheme('')
+      if (account) {
+        setName(account.name)
+        setHolderId(account.holderId)
+        setBalance(account.balance.toString())
+      } else if (card) {
+        setName(card.name)
+        setHolderId(card.holderId)
+        setLimitValue(card.limit.toString())
+        setClosingDay(card.closingDay.toString())
+        setDueDay(card.dueDay.toString())
+        setTheme(card.theme)
+        setLastDigits(card.lastDigits || '')
+      }
       setErrors({})
     }
-  }, [open])
+  }, [open, account, card])
 
   const validate = () => {
     const next: Record<string, string> = {}
     if (!name.trim() || name.trim().length < 3) next.name = 'Informe um nome com pelo menos 3 caracteres.'
     if (!holderId) next.holderId = 'Selecione o titular.'
-    if (mode === 'bank') {
-      if (!balance || Number(balance) === 0) next.balance = 'Informe o saldo inicial.'
+    if (!isCard) {
+      if (!balance) next.balance = 'Informe o saldo.'
     } else {
       const closing = Number(closingDay)
       const due = Number(dueDay)
@@ -61,53 +69,76 @@ export function AddAccountCardModal({ open, onClose }: Props) {
     if (!validate()) return
 
     try {
-      if (mode === 'bank') {
-        await addBankAccount({
+      if (!isCard && accountId) {
+        await updateBankAccount(accountId, {
           name: name.trim(),
           holderId,
           balance: Number(balance),
-          bank: undefined,
-          accountType: 'checking',
+          accountType: account?.accountType,
         })
-        setToast('Conta adicionada com sucesso!')
-      } else {
-        await addCreditCard({
+        setToast('Conta atualizada com sucesso!')
+      } else if (isCard && cardId) {
+        await updateCreditCard(cardId, {
           name: name.trim(),
           holderId,
           limit: Number(limitValue),
-          currentBill: 0,
           closingDay: Number(closingDay),
           dueDay: Number(dueDay),
           theme: theme as 'black' | 'lime' | 'white',
           lastDigits: lastDigits || undefined,
-          bank: undefined,
         })
-        setToast('Cartão adicionado com sucesso!')
+        setToast('Cartão atualizado com sucesso!')
       }
 
       setTimeout(() => setToast(null), 2000)
       onClose()
     } catch (err) {
-      console.error('Erro ao adicionar conta/cartão:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar conta/cartão. Verifique o console.'
+      console.error('Erro ao atualizar conta/cartão:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar conta/cartão. Verifique o console.'
       setToast(`Erro: ${errorMessage}`)
       setTimeout(() => setToast(null), 4000)
     }
   }
 
-  if (!open) return null
+  const handleDelete = async () => {
+    if (!confirm(`Tem certeza que deseja excluir ${isCard ? 'este cartão' : 'esta conta'}? Esta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      if (!isCard && accountId) {
+        await deleteBankAccount(accountId)
+        setToast('Conta excluída com sucesso!')
+      } else if (isCard && cardId) {
+        await deleteCreditCard(cardId)
+        setToast('Cartão excluído com sucesso!')
+      }
+
+      setTimeout(() => setToast(null), 2000)
+      onClose()
+    } catch (err) {
+      console.error('Erro ao excluir conta/cartão:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir conta/cartão. Verifique o console.'
+      setToast(`Erro: ${errorMessage}`)
+      setTimeout(() => setToast(null), 4000)
+    }
+  }
+
+  if (!open || (!account && !card)) return null
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white animate-fade-in">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4 bg-white">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center">
-            <Icon name="credit_card" className="w-7 h-7 text-white" />
+            <Icon name="edit" className="w-7 h-7 text-white" />
           </div>
           <div className="flex flex-col">
-            <h2 className="text-heading-xl font-bold text-text-primary">Adicionar Conta/Cartão</h2>
+            <h2 className="text-heading-xl font-bold text-text-primary">
+              {isCard ? 'Editar Cartão' : 'Editar Conta'}
+            </h2>
             <p className="text-text-secondary text-sm">
-              Cadastre contas bancárias ou cartões de crédito para organizar suas finanças.
+              {isCard ? 'Atualize as informações do cartão de crédito.' : 'Atualize as informações da conta bancária.'}
             </p>
           </div>
         </div>
@@ -123,38 +154,15 @@ export function AddAccountCardModal({ open, onClose }: Props) {
       <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
         <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
           <div className="bg-white rounded-xl p-6 flex flex-col gap-6">
-            <div className="bg-gray-100 rounded-full p-1 flex gap-2">
-              {[
-                { key: 'bank', label: 'Conta Bancária' },
-                { key: 'card', label: 'Cartão de Crédito' },
-              ].map((item) => {
-                const selected = mode === item.key
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setMode(item.key as Mode)}
-                    className={`flex-1 py-3 rounded-full text-center font-semibold transition ${
-                      selected ? 'bg-white shadow-sm text-text-primary' : 'text-text-secondary'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                )
-              })}
-            </div>
-
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text-primary">
-                {mode === 'bank' ? 'Nome da Conta' : 'Nome do Cartão'}
-              </label>
+              <label className="text-sm font-semibold text-text-primary">Nome</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
                   errors.name ? 'border-red-500' : 'border-border'
                 }`}
-                placeholder={mode === 'bank' ? 'Ex: Nubank Conta' : 'Ex: Nubank Mastercard'}
+                placeholder={isCard ? 'Nome do cartão' : 'Nome da conta'}
               />
               {errors.name ? <p className="text-sm text-red-600">{errors.name}</p> : null}
             </div>
@@ -168,19 +176,19 @@ export function AddAccountCardModal({ open, onClose }: Props) {
                   errors.holderId ? 'border-red-500' : 'border-border'
                 }`}
               >
-                <option value="">Selecione</option>
+                <option value="">Selecione o titular</option>
                 {familyMembers.map((member) => (
                   <option key={member.id} value={member.id}>
-                    {member.name}
+                    {member.name} - {member.role}
                   </option>
                 ))}
               </select>
               {errors.holderId ? <p className="text-sm text-red-600">{errors.holderId}</p> : null}
             </div>
 
-            {mode === 'bank' ? (
+            {!isCard ? (
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-text-primary">Saldo Inicial</label>
+                <label className="text-sm font-semibold text-text-primary">Saldo</label>
                 <input
                   type="number"
                   value={balance}
@@ -188,23 +196,24 @@ export function AddAccountCardModal({ open, onClose }: Props) {
                   className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
                     errors.balance ? 'border-red-500' : 'border-border'
                   }`}
-                  placeholder="R$ 0,00"
+                  placeholder="0,00"
                 />
                 {errors.balance ? <p className="text-sm text-red-600">{errors.balance}</p> : null}
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold text-text-primary">Dia de Fechamento</label>
                     <input
                       type="number"
+                      min="1"
+                      max="31"
                       value={closingDay}
                       onChange={(e) => setClosingDay(e.target.value)}
                       className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
                         errors.closingDay ? 'border-red-500' : 'border-border'
                       }`}
-                      placeholder="1 a 31"
                     />
                     {errors.closingDay ? <p className="text-sm text-red-600">{errors.closingDay}</p> : null}
                   </div>
@@ -212,68 +221,64 @@ export function AddAccountCardModal({ open, onClose }: Props) {
                     <label className="text-sm font-semibold text-text-primary">Dia de Vencimento</label>
                     <input
                       type="number"
+                      min="1"
+                      max="31"
                       value={dueDay}
                       onChange={(e) => setDueDay(e.target.value)}
                       className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
                         errors.dueDay ? 'border-red-500' : 'border-border'
                       }`}
-                      placeholder="1 a 31"
                     />
                     {errors.dueDay ? <p className="text-sm text-red-600">{errors.dueDay}</p> : null}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-text-primary">Limite Total</label>
-                    <input
-                      type="number"
-                      value={limitValue}
-                      onChange={(e) => setLimitValue(e.target.value)}
-                      className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                        errors.limitValue ? 'border-red-500' : 'border-border'
-                      }`}
-                      placeholder="R$ 0,00"
-                    />
-                    {errors.limitValue ? <p className="text-sm text-red-600">{errors.limitValue}</p> : null}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-text-primary">Últimos 4 Dígitos (opcional)</label>
-                    <input
-                      type="number"
-                      value={lastDigits}
-                      onChange={(e) => setLastDigits(e.target.value)}
-                      className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                        errors.lastDigits ? 'border-red-500' : 'border-border'
-                      }`}
-                      placeholder="1234"
-                    />
-                    {errors.lastDigits ? <p className="text-sm text-red-600">{errors.lastDigits}</p> : null}
-                  </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-text-primary">Limite Total</label>
+                  <input
+                    type="number"
+                    value={limitValue}
+                    onChange={(e) => setLimitValue(e.target.value)}
+                    className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                      errors.limitValue ? 'border-red-500' : 'border-border'
+                    }`}
+                    placeholder="0,00"
+                  />
+                  {errors.limitValue ? <p className="text-sm text-red-600">{errors.limitValue}</p> : null}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-text-primary">Últimos 4 dígitos (opcional)</label>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={lastDigits}
+                    onChange={(e) => setLastDigits(e.target.value.replace(/\D/g, ''))}
+                    className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                      errors.lastDigits ? 'border-red-500' : 'border-border'
+                    }`}
+                    placeholder="1234"
+                  />
+                  {errors.lastDigits ? <p className="text-sm text-red-600">{errors.lastDigits}</p> : null}
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold text-text-primary">Tema Visual</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { value: 'black', label: 'Black', className: 'bg-black text-white' },
-                      { value: 'lime', label: 'Lime', className: 'bg-[#C4E703] text-black' },
-                      { value: 'white', label: 'White', className: 'bg-white text-text-primary border border-border' },
-                    ].map((opt) => {
-                      const selected = theme === opt.value
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setTheme(opt.value as 'black' | 'lime' | 'white')}
-                          className={`h-12 rounded-xl font-semibold ${opt.className} ${
-                            selected ? 'ring-2 ring-blue-400' : ''
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      )
-                    })}
+                  <div className="flex gap-3">
+                    {(['black', 'lime', 'white'] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTheme(t)}
+                        className={`h-12 flex-1 rounded-xl border-2 transition ${
+                          theme === t
+                            ? 'border-black bg-black text-white'
+                            : 'border-border bg-white text-text-primary hover:bg-gray-50'
+                        }`}
+                      >
+                        {t === 'black' ? 'Preto' : t === 'lime' ? 'Verde Limão' : 'Branco'}
+                      </button>
+                    ))}
                   </div>
                   {errors.theme ? <p className="text-sm text-red-600">{errors.theme}</p> : null}
                 </div>
@@ -283,21 +288,30 @@ export function AddAccountCardModal({ open, onClose }: Props) {
         </div>
       </div>
 
-      <footer className="sticky bottom-0 z-10 border-t border-border bg-white px-6 py-4 flex items-center justify-end gap-3">
+      <footer className="sticky bottom-0 z-10 border-t border-border bg-white px-6 py-4 flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={onClose}
-          className="h-11 px-6 rounded-full border border-border text-text-primary hover:bg-gray-100"
+          onClick={handleDelete}
+          className="h-11 px-6 rounded-full border border-red-500 text-red-600 hover:bg-red-50"
         >
-          Cancelar
+          Excluir
         </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="h-11 px-6 rounded-full bg-black text-white font-semibold hover:opacity-90"
-        >
-          Adicionar
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 px-6 rounded-full border border-border text-text-primary hover:bg-gray-100"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="h-11 px-6 rounded-full bg-black text-white font-semibold hover:opacity-90"
+          >
+            Salvar Alterações
+          </button>
+        </div>
       </footer>
 
       {toast ? (

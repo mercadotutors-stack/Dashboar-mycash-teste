@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useFinance } from '../context/FinanceContext'
 import { Icon } from '../components/ui/Icon'
 import { AddAccountCardModal } from '../components/modals/AddAccountCardModal'
+import { EditAccountCardModal } from '../components/modals/EditAccountCardModal'
 import { CardDetailsModal } from '../components/modals/CardDetailsModal'
 import { NewTransactionModal } from '../components/modals/NewTransactionModal'
 
@@ -9,11 +10,14 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export default function Cards() {
-  const { creditCards } = useFinance()
+  const { creditCards, deleteCreditCard } = useFinance()
   const [showAdd, setShowAdd] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [editCardId, setEditCardId] = useState<string | null>(null)
   const [detailCardId, setDetailCardId] = useState<string | null>(null)
   const [showNewTx, setShowNewTx] = useState(false)
   const [presetCard, setPresetCard] = useState<string | undefined>(undefined)
+  const [toast, setToast] = useState<string | null>(null)
 
   const sortedCards = useMemo(
     () => [...creditCards].sort((a, b) => b.currentBill - a.currentBill || a.name.localeCompare(b.name)),
@@ -116,21 +120,43 @@ export default function Cards() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setDetailCardId(card.id)
+                      setPresetCard(card.id)
+                      setShowNewTx(true)
                     }}
-                    className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100"
+                    className="flex-1 h-10 px-4 rounded-full bg-black text-white text-sm font-semibold hover:opacity-90"
                   >
-                    Ver Detalhes
+                    Adicionar Despesa
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setPresetCard(card.id)
-                      setShowNewTx(true)
+                      setEditCardId(card.id)
+                      setShowEdit(true)
                     }}
-                    className="h-10 px-4 rounded-full bg-black text-white text-sm font-semibold hover:opacity-90"
+                    className="h-10 px-4 rounded-full border border-border text-text-primary text-sm hover:bg-gray-100"
                   >
-                    Adicionar Despesa
+                    Editar
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      if (!confirm(`Tem certeza que deseja excluir o cartão "${card.name}"? Esta ação não pode ser desfeita.`)) {
+                        return
+                      }
+                      try {
+                        await deleteCreditCard(card.id)
+                        setToast('Cartão excluído com sucesso!')
+                        setTimeout(() => setToast(null), 2000)
+                      } catch (err) {
+                        console.error('Erro ao excluir cartão:', err)
+                        setToast('Erro ao excluir cartão')
+                        setTimeout(() => setToast(null), 3000)
+                      }
+                    }}
+                    className="h-10 w-10 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                    aria-label="Excluir cartão"
+                  >
+                    <Icon name="delete" className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -140,6 +166,14 @@ export default function Cards() {
       )}
 
       <AddAccountCardModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <EditAccountCardModal
+        open={showEdit}
+        onClose={() => {
+          setShowEdit(false)
+          setEditCardId(null)
+        }}
+        cardId={editCardId ?? undefined}
+      />
       <CardDetailsModal
         open={!!detailCardId}
         cardId={detailCardId}
@@ -158,6 +192,12 @@ export default function Cards() {
         presetAccountId={presetCard}
         presetType="expense"
       />
+
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
+          {toast}
+        </div>
+      ) : null}
     </div>
   )
 }

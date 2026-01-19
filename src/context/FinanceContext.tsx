@@ -26,8 +26,13 @@ interface FinanceContextValue {
 
   addTransaction: (input: TransactionInput) => Promise<string>
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>
+  deleteTransaction: (id: string) => Promise<void>
   addCreditCard: (input: CreditCardInput) => Promise<string>
+  updateCreditCard: (id: string, input: Partial<CreditCardInput>) => Promise<void>
+  deleteCreditCard: (id: string) => Promise<void>
   addBankAccount: (input: BankAccountInput) => Promise<string>
+  updateBankAccount: (id: string, input: Partial<BankAccountInput>) => Promise<void>
+  deleteBankAccount: (id: string) => Promise<void>
   addFamilyMember: (input: FamilyMemberInput) => Promise<string>
   addCategory: (input: { name: string; type: 'income' | 'expense' }) => Promise<string>
 
@@ -498,6 +503,131 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
+  const deleteTransaction = useCallback(
+    async (id: string) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+      const { error } = await supabase.from('transactions').delete().eq('id', id)
+      if (error) throw error
+      setTransactions((prev) => prev.filter((tx) => tx.id !== id))
+    },
+    [userId],
+  )
+
+  const updateCreditCard = useCallback(
+    async (id: string, input: Partial<CreditCardInput>) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+      const payload: Record<string, any> = {}
+      if (input.name !== undefined) payload.name = input.name
+      if (input.holderId !== undefined) payload.holder_id = input.holderId
+      if (input.limit !== undefined) payload.credit_limit = input.limit
+      if (input.currentBill !== undefined) payload.current_bill = input.currentBill
+      if (input.closingDay !== undefined) payload.closing_day = input.closingDay
+      if (input.dueDay !== undefined) payload.due_day = input.dueDay
+      if (input.theme !== undefined) payload.theme = input.theme
+      if (input.lastDigits !== undefined) payload.last_digits = input.lastDigits
+      if (input.bank !== undefined) payload.bank = input.bank
+
+      const { error } = await supabase.from('accounts').update(payload).eq('id', id)
+      if (error) throw error
+
+      setCreditCards((prev) =>
+        prev.map((card) => {
+          if (card.id === id) {
+            return {
+              ...card,
+              ...input,
+              limit: input.limit ?? card.limit,
+              currentBill: input.currentBill ?? card.currentBill,
+              closingDay: input.closingDay ?? card.closingDay,
+              dueDay: input.dueDay ?? card.dueDay,
+              theme: (input.theme as any) ?? card.theme,
+              lastDigits: input.lastDigits ?? card.lastDigits,
+              bank: input.bank ?? card.bank,
+            }
+          }
+          return card
+        })
+      )
+    },
+    [userId],
+  )
+
+  const deleteCreditCard = useCallback(
+    async (id: string) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+      const { error } = await supabase.from('accounts').delete().eq('id', id)
+      if (error) throw error
+      setCreditCards((prev) => prev.filter((card) => card.id !== id))
+    },
+    [userId],
+  )
+
+  const updateBankAccount = useCallback(
+    async (id: string, input: Partial<BankAccountInput>) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+      const payload: Record<string, any> = {}
+      if (input.name !== undefined) payload.name = input.name
+      if (input.holderId !== undefined) payload.holder_id = input.holderId
+      if (input.balance !== undefined) payload.balance = input.balance
+      if (input.bank !== undefined) payload.bank = input.bank
+      if (input.accountType !== undefined) payload.type = input.accountType === 'savings' ? 'SAVINGS' : 'CHECKING'
+
+      const { error } = await supabase.from('accounts').update(payload).eq('id', id)
+      if (error) throw error
+
+      setBankAccounts((prev) =>
+        prev.map((acc) => {
+          if (acc.id === id) {
+            return {
+              ...acc,
+              ...input,
+              balance: input.balance ?? acc.balance,
+              bank: input.bank ?? acc.bank,
+              accountType: input.accountType ?? acc.accountType,
+            }
+          }
+          return acc
+        })
+      )
+    },
+    [userId],
+  )
+
+  const deleteBankAccount = useCallback(
+    async (id: string) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+      const { error } = await supabase.from('accounts').delete().eq('id', id)
+      if (error) throw error
+      setBankAccounts((prev) => prev.filter((acc) => acc.id !== id))
+    },
+    [userId],
+  )
+
   const getFilteredTransactions = useCallback(() => filteredTransactions, [filteredTransactions])
 
   const calculateIncomeForPeriod = useCallback(() => {
@@ -565,8 +695,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setSearchText,
     addTransaction,
     updateTransaction,
+    deleteTransaction,
     addCreditCard,
+    updateCreditCard,
+    deleteCreditCard,
     addBankAccount,
+    updateBankAccount,
+    deleteBankAccount,
     addFamilyMember,
     addCategory,
     getFilteredTransactions,

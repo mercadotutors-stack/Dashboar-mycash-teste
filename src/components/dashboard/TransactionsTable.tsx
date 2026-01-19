@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { EditTransactionModal } from '../modals/EditTransactionModal'
 
 type LocalTypeFilter = 'all' | 'income' | 'expense'
 
@@ -50,10 +51,12 @@ function buildPageList(current: number, total: number): Array<number | 'ellipsis
 }
 
 export function TransactionsTable() {
-  const { getFilteredTransactions, bankAccounts, creditCards, familyMembers } = useFinance()
+  const { getFilteredTransactions, bankAccounts, creditCards, familyMembers, deleteTransaction } = useFinance()
   const [searchText, setSearchText] = useState('')
   const [typeFilter, setTypeFilter] = useState<LocalTypeFilter>('all')
   const [page, setPage] = useState(1)
+  const [editTxId, setEditTxId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
   const tableRef = useRef<HTMLDivElement | null>(null)
 
   const filteredTransactions = useMemo(() => {
@@ -162,7 +165,7 @@ export function TransactionsTable() {
 
       <div className="w-full overflow-x-auto">
         <div className="min-w-[1024px] rounded-xl border border-border">
-          <div className="grid grid-cols-[60px,140px,1.2fr,1fr,1.1fr,120px,120px] bg-gray-50 text-text-primary font-semibold text-body rounded-t-xl">
+          <div className="grid grid-cols-[60px,140px,1.2fr,1fr,1.1fr,120px,120px,100px] bg-gray-50 text-text-primary font-semibold text-body rounded-t-xl">
             <div className="px-4 py-3">Membro</div>
             <div className="px-4 py-3">Datas</div>
             <div className="px-4 py-3">Descrição</div>
@@ -170,6 +173,7 @@ export function TransactionsTable() {
             <div className="px-4 py-3">Conta/cartão</div>
             <div className="px-4 py-3">Parcelas</div>
             <div className="px-4 py-3 text-right">Valor</div>
+            <div className="px-4 py-3 text-center">Ações</div>
           </div>
 
           <div className="divide-y divide-border">
@@ -189,7 +193,7 @@ export function TransactionsTable() {
                 return (
                   <div
                     key={tx.id}
-                    className={`grid grid-cols-[60px,140px,1.2fr,1fr,1.1fr,120px,120px] items-center ${rowBg} hover:bg-gray-100 transition-colors duration-150 px-2 py-4 animate-fade-in`}
+                    className={`grid grid-cols-[60px,140px,1.2fr,1fr,1.1fr,120px,120px,100px] items-center ${rowBg} hover:bg-gray-100 transition-colors duration-150 px-2 py-4 animate-fade-in`}
                   >
                     <div className="px-2 flex items-center">
                       {member ? (
@@ -233,6 +237,36 @@ export function TransactionsTable() {
                         {sign} {formatCurrency(tx.amount)}
                       </span>
                     </div>
+
+                    <div className="px-2 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setEditTxId(tx.id)}
+                        className="w-8 h-8 rounded-full border border-border text-text-primary hover:bg-gray-100 flex items-center justify-center"
+                        aria-label="Editar transação"
+                      >
+                        <Icon name="edit" className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Tem certeza que deseja excluir a transação "${tx.description}"? Esta ação não pode ser desfeita.`)) {
+                            return
+                          }
+                          try {
+                            await deleteTransaction(tx.id)
+                            setToast('Transação excluída com sucesso!')
+                            setTimeout(() => setToast(null), 2000)
+                          } catch (err) {
+                            console.error('Erro ao excluir transação:', err)
+                            setToast('Erro ao excluir transação')
+                            setTimeout(() => setToast(null), 3000)
+                          }
+                        }}
+                        className="w-8 h-8 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                        aria-label="Excluir transação"
+                      >
+                        <Icon name="delete" className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 )
               })
@@ -240,6 +274,18 @@ export function TransactionsTable() {
           </div>
         </div>
       </div>
+
+      <EditTransactionModal
+        open={!!editTxId}
+        transactionId={editTxId ?? undefined}
+        onClose={() => setEditTxId(null)}
+      />
+
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
+          {toast}
+        </div>
+      ) : null}
 
       <footer className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <span className="text-text-primary font-medium">

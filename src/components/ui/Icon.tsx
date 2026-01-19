@@ -43,4 +43,8 @@ const iconMap: Record<string, string> = {
   repeat: 'repeat',
   account_balance: 'account_balance',
   wallet: 'account_balance_wallet',
+  delete: 'delete',
+  edit: 'edit',
+  person_add: 'person_add',
+  credit_card: 'credit_card',
 }

@@ -3,6 +3,7 @@ import { useFinance } from '../context/FinanceContext'
 import type { Transaction, TransactionType } from '../types'
 import { Icon } from '../components/ui/Icon'
 import { NewTransactionModal } from '../components/modals/NewTransactionModal'
+import { EditTransactionModal } from '../components/modals/EditTransactionModal'
 
 type SortField = 'date' | 'amount'
 type SortOrder = 'asc' | 'desc'
@@ -11,7 +12,7 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export default function Transactions() {
-  const { getFilteredTransactions, bankAccounts, creditCards, familyMembers } = useFinance()
+  const { getFilteredTransactions, bankAccounts, creditCards, familyMembers, deleteTransaction } = useFinance()
   const baseTransactions = getFilteredTransactions()
 
   const [search, setSearch] = useState('')
@@ -26,6 +27,8 @@ export default function Transactions() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [page, setPage] = useState(1)
   const [showNew, setShowNew] = useState(false)
+  const [editTxId, setEditTxId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
   const PAGE_SIZE = 10
 
   const allCategories = useMemo(() => {
@@ -206,7 +209,7 @@ export default function Transactions() {
 
       {/* Tabela */}
       <div className="rounded-xl border border-border bg-white overflow-hidden">
-        <div className="grid grid-cols-[160px,1.2fr,1fr,1fr,120px,120px] bg-gray-50 text-text-primary font-semibold text-body">
+        <div className="grid grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] bg-gray-50 text-text-primary font-semibold text-body">
           <div className="px-4 py-3 flex items-center gap-2 cursor-pointer" onClick={() => handleSort('date')}>
             Data
             {sortField === 'date' ? <Icon name={sortOrder === 'asc' ? 'north-east' : 'south-west'} className="w-4 h-4" /> : null}
@@ -219,6 +222,7 @@ export default function Transactions() {
             {sortField === 'amount' ? <Icon name={sortOrder === 'asc' ? 'north-east' : 'south-west'} className="w-4 h-4" /> : null}
           </div>
           <div className="px-4 py-3">Status</div>
+          <div className="px-4 py-3 text-center">Ações</div>
         </div>
 
         {paginated.length === 0 ? (
@@ -233,7 +237,7 @@ export default function Transactions() {
             return (
               <div
                 key={tx.id}
-                className={`grid grid-cols-[160px,1.2fr,1fr,1fr,120px,120px] items-center px-2 py-3 ${rowBg} hover:bg-gray-100 transition`}
+                className={`grid grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] items-center px-2 py-3 ${rowBg} hover:bg-gray-100 transition`}
               >
                 <div className="px-2 text-text-secondary text-sm">{tx.date.toLocaleDateString('pt-BR')}</div>
                 <div className="px-2 text-text-primary font-semibold flex items-center gap-2">
@@ -256,6 +260,35 @@ export default function Transactions() {
                   {sign} {formatCurrency(tx.amount)}
                 </div>
                 <div className="px-2 text-text-secondary text-sm capitalize">{tx.status}</div>
+                <div className="px-2 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setEditTxId(tx.id)}
+                    className="w-8 h-8 rounded-full border border-border text-text-primary hover:bg-gray-100 flex items-center justify-center"
+                    aria-label="Editar transação"
+                  >
+                    <Icon name="edit" className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Tem certeza que deseja excluir a transação "${tx.description}"? Esta ação não pode ser desfeita.`)) {
+                        return
+                      }
+                      try {
+                        await deleteTransaction(tx.id)
+                        setToast('Transação excluída com sucesso!')
+                        setTimeout(() => setToast(null), 2000)
+                      } catch (err) {
+                        console.error('Erro ao excluir transação:', err)
+                        setToast('Erro ao excluir transação')
+                        setTimeout(() => setToast(null), 3000)
+                      }
+                    }}
+                    className="w-8 h-8 rounded-full border border-red-500 text-red-600 hover:bg-red-50 flex items-center justify-center"
+                    aria-label="Excluir transação"
+                  >
+                    <Icon name="delete" className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )
           })
@@ -295,6 +328,17 @@ export default function Transactions() {
       ) : null}
 
       <NewTransactionModal open={showNew} onClose={() => setShowNew(false)} />
+      <EditTransactionModal
+        open={!!editTxId}
+        transactionId={editTxId ?? undefined}
+        onClose={() => setEditTxId(null)}
+      />
+
+      {toast ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
+          {toast}
+        </div>
+      ) : null}
     </div>
   )
 }
