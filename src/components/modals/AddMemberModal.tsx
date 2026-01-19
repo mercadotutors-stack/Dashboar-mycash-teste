@@ -3,7 +3,6 @@ import { useFinance } from '../../context/FinanceContext'
 import { useAuth } from '../../context/AuthContext'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
-import { Tooltip } from '../ui/Tooltip'
 import { uploadImage } from '../../lib/uploadImage'
 
 type Props = {

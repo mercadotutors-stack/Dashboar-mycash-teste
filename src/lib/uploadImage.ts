@@ -35,7 +35,7 @@ export async function uploadImage(
 
     // Faz upload para o bucket 'avatars'
     // Se o bucket não existir, você verá um erro no console
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, {
         cacheControl: '3600',
