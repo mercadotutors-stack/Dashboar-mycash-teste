@@ -41,4 +41,6 @@ const iconMap: Record<string, string> = {
   'north-east': 'north_east',
   'south-west': 'south_west',
   repeat: 'repeat',
+  account_balance: 'account_balance',
+  wallet: 'account_balance_wallet',
 }

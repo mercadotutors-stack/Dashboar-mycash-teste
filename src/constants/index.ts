@@ -8,6 +8,7 @@
 export const ROUTES = {
   DASHBOARD: '/',
   CARDS: '/cards',
+  ACCOUNTS: '/accounts',
   TRANSACTIONS: '/transactions',
   PROFILE: '/profile',
 } as const;
@@ -31,6 +32,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     label: 'Cartões',
     path: ROUTES.CARDS,
     icon: 'credit-card',
+  },
+  {
+    label: 'Contas',
+    path: ROUTES.ACCOUNTS,
+    icon: 'account_balance',
   },
   {
     label: 'Transações',
