@@ -24,26 +24,40 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
       <div className="flex flex-col gap-6 sm:gap-8">
-        <DashboardHeader
-          onAddMember={() => setShowAddMember(true)}
-          onNewTransaction={() => openNewTransaction(undefined, undefined)}
-        />
+        <div className="animate-slide-up" style={{ animationDelay: '0ms' }}>
+          <DashboardHeader
+            onAddMember={() => setShowAddMember(true)}
+            onNewTransaction={() => openNewTransaction(undefined, undefined)}
+          />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] gap-6 sm:gap-8">
           <div className="flex flex-col gap-6 sm:gap-8">
-            <SummaryCards />
-            <ExpensesByCategoryCarousel />
-            <FinancialFlowChart />
+            <div className="animate-slide-up" style={{ animationDelay: '50ms' }}>
+              <SummaryCards />
+            </div>
+            <div className="animate-slide-up" style={{ animationDelay: '150ms' }}>
+              <ExpensesByCategoryCarousel />
+            </div>
+            <div className="animate-slide-up" style={{ animationDelay: '250ms' }}>
+              <FinancialFlowChart />
+            </div>
           </div>
           <div className="flex flex-col gap-6 sm:gap-8">
-            <CreditCardsWidget />
-            <UpcomingExpensesWidget onAddExpense={() => openNewTransaction(undefined, 'expense')} />
+            <div className="animate-slide-up" style={{ animationDelay: '100ms' }}>
+              <CreditCardsWidget />
+            </div>
+            <div className="animate-slide-up" style={{ animationDelay: '200ms' }}>
+              <UpcomingExpensesWidget onAddExpense={() => openNewTransaction(undefined, 'expense')} />
+            </div>
           </div>
         </div>
 
-        <TransactionsTable />
+        <div className="animate-slide-up" style={{ animationDelay: '300ms' }}>
+          <TransactionsTable />
+        </div>
       </div>
 
       <NewTransactionModal

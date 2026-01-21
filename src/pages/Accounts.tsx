@@ -6,9 +6,7 @@ import { EditAccountCardModal } from '../components/modals/EditAccountCardModal'
 import { NewTransactionModal } from '../components/modals/NewTransactionModal'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../constants'
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+import { formatCurrency } from '../utils'
 
 export default function Accounts() {
   const { bankAccounts, familyMembers, deleteBankAccount } = useFinance()
@@ -41,8 +39,8 @@ export default function Accounts() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6 animate-fade-in">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between animate-slide-up">
         <div className="flex flex-col gap-1">
           <h1 className="text-heading-xl font-bold text-text-primary">Contas Bancárias</h1>
           <p className="text-text-secondary text-body hidden sm:block">
@@ -72,21 +70,21 @@ export default function Accounts() {
 
       {/* Filtros e Resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1">
+        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1 animate-scale-up" style={{ animationDelay: '50ms' }}>
           <span className="text-sm text-text-secondary">Saldo Total</span>
           <span className="text-heading-lg font-bold text-text-primary">{formatCurrency(totalBalance)}</span>
         </div>
-        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1">
+        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1 animate-scale-up" style={{ animationDelay: '100ms' }}>
           <span className="text-sm text-text-secondary">Total de Contas</span>
           <span className="text-heading-lg font-bold text-text-primary">{filteredAccounts.length}</span>
         </div>
-        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1">
+        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1 animate-scale-up" style={{ animationDelay: '150ms' }}>
           <span className="text-sm text-text-secondary">Contas Correntes</span>
           <span className="text-heading-lg font-bold text-text-primary">
             {bankAccounts.filter((a) => a.accountType === 'checking').length}
           </span>
         </div>
-        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1">
+        <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1 animate-scale-up" style={{ animationDelay: '200ms' }}>
           <span className="text-sm text-text-secondary">Poupanças</span>
           <span className="text-heading-lg font-bold text-text-primary">
             {bankAccounts.filter((a) => a.accountType === 'savings').length}
@@ -155,12 +153,13 @@ export default function Accounts() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredAccounts.map((account) => {
+          {filteredAccounts.map((account, idx) => {
             const isPositive = account.balance >= 0
             return (
               <div
                 key={account.id}
-                className="rounded-2xl border-2 border-border bg-white p-5 shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col gap-4"
+                className="rounded-2xl border-2 border-border bg-white p-5 shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col gap-4 animate-scale-up"
+                style={{ animationDelay: `${idx * 60}ms` }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">

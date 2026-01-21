@@ -7,6 +7,7 @@ import { Tooltip } from '../components/ui/Tooltip'
 import { AddMemberModal } from '../components/modals/AddMemberModal'
 import { EditMemberModal } from '../components/modals/EditMemberModal'
 import { ROUTES } from '../constants'
+import { formatCurrency } from '../utils'
 
 type Tab = 'info' | 'settings'
 
@@ -103,7 +104,7 @@ export default function Profile() {
                 </p>
                 <p className="text-body font-semibold text-text-primary flex items-center gap-2">
                   <Icon name="credit-card" className="w-4 h-4" />
-                  Renda mensal: R$ {mainUser.monthlyIncome?.toLocaleString('pt-BR') ?? '0,00'}
+                  Renda mensal: {formatCurrency(mainUser.monthlyIncome ?? 0)}
                 </p>
               </div>
               <Tooltip content="Editar informações do seu perfil" position="top">
@@ -161,7 +162,7 @@ export default function Profile() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-body font-semibold text-text-primary">
-                      R$ {member.monthlyIncome?.toLocaleString('pt-BR') ?? '0,00'}
+                      {formatCurrency(member.monthlyIncome ?? 0)}
                     </span>
                     <Tooltip content={`Ver perfil de ${member.name}`} position="top">
                       <button

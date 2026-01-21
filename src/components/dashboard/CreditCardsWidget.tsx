@@ -6,6 +6,7 @@ import { Icon } from '../ui/Icon'
 import { CardDetailsModal } from '../modals/CardDetailsModal'
 import { AddAccountCardModal } from '../modals/AddAccountCardModal'
 import { NewTransactionModal } from '../modals/NewTransactionModal'
+import { formatCurrency } from '../../utils'
 
 type Theme = 'lime' | 'black' | 'white'
 
@@ -33,13 +34,6 @@ const themeStyles: Record<
     badgeClass: 'bg-bg-secondary text-text-primary border border-border',
   },
 }
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 export function CreditCardsWidget() {
   const { creditCards, bankAccounts } = useFinance()
@@ -92,6 +86,7 @@ export function CreditCardsWidget() {
       className="
         rounded-2xl border border-border bg-bg-secondary
         p-4 sm:p-6 lg:p-8 shadow-sm flex flex-col gap-4 sm:gap-6
+        animate-slide-up
       "
     >
       <header className="flex items-center justify-between gap-3">
@@ -125,7 +120,7 @@ export function CreditCardsWidget() {
             <p className="text-text-secondary text-body">Nenhum cartão ou conta cadastrado</p>
           </div>
         ) : (
-          currentPageItems.map((item) => {
+          currentPageItems.map((item, idx) => {
             if (item.type === 'card') {
               const card = item
               const style = themeStyles[(card.theme as Theme) || 'white'] || themeStyles.white
@@ -135,9 +130,11 @@ export function CreditCardsWidget() {
                   key={card.id}
                   className="
                     flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
-                    px-5 py-4 transition duration-200
+                    px-5 py-4 transition-card
                     hover:-translate-y-1 hover:shadow-md cursor-pointer
+                    animate-slide-up
                   "
+                  style={{ animationDelay: `${idx * 60}ms` }}
                   onClick={() => handleDetail(card.id, 'card')}
                 >
                   <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${style.blockClass}`}>
@@ -168,9 +165,11 @@ export function CreditCardsWidget() {
                   key={account.id}
                   className="
                     flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
-                    px-5 py-4 transition duration-200
+                    px-5 py-4 transition-card
                     hover:-translate-y-1 hover:shadow-md cursor-pointer
+                    animate-slide-up
                   "
+                  style={{ animationDelay: `${idx * 60}ms` }}
                   onClick={() => handleDetail(account.id, 'account')}
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
@@ -213,6 +212,7 @@ export function CreditCardsWidget() {
                 flex items-center justify-center
                 disabled:opacity-50 disabled:cursor-not-allowed
                 hover:bg-bg-secondary
+                transition-button
               "
               aria-label="Página anterior"
             >
@@ -227,6 +227,7 @@ export function CreditCardsWidget() {
                 flex items-center justify-center
                 disabled:opacity-50 disabled:cursor-not-allowed
                 hover:bg-bg-secondary
+                transition-button
               "
               aria-label="Próxima página"
             >

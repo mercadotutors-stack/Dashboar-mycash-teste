@@ -4,12 +4,10 @@ import type { Transaction, TransactionType } from '../types'
 import { Icon } from '../components/ui/Icon'
 import { NewTransactionModal } from '../components/modals/NewTransactionModal'
 import { EditTransactionModal } from '../components/modals/EditTransactionModal'
+import { formatCurrency, formatDate } from '../utils'
 
 type SortField = 'date' | 'amount'
 type SortOrder = 'asc' | 'desc'
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export default function Transactions() {
   const { getFilteredTransactions, bankAccounts, creditCards, familyMembers, deleteTransaction } = useFinance()
@@ -116,8 +114,8 @@ export default function Transactions() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6 animate-fade-in">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between animate-slide-up">
         <h1 className="text-heading-xl font-bold text-text-primary">Transações</h1>
         <div className="flex gap-2 flex-wrap">
           <button
@@ -140,14 +138,15 @@ export default function Transactions() {
 
       {/* Resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <SummaryCard label="Total de receitas" value={formatCurrency(totals.incomes)} positive />
-        <SummaryCard label="Total de despesas" value={formatCurrency(totals.expenses)} />
+        <SummaryCard label="Total de receitas" value={formatCurrency(totals.incomes)} positive delay={50} />
+        <SummaryCard label="Total de despesas" value={formatCurrency(totals.expenses)} delay={100} />
         <SummaryCard
           label="Diferença"
           value={formatCurrency(totals.diff)}
           positive={totals.diff >= 0}
+          delay={150}
         />
-        <SummaryCard label="Transações encontradas" value={String(filtered.length)} />
+        <SummaryCard label="Transações encontradas" value={String(filtered.length)} delay={200} />
       </div>
 
       {/* Filtros */}
@@ -241,9 +240,10 @@ export default function Transactions() {
             return (
               <div
                 key={tx.id}
-                className={`grid grid-cols-[140px,1.2fr,1fr,1fr,100px,100px,90px] sm:grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] items-center px-2 py-3 ${rowBg} hover:bg-gray-100 transition text-xs sm:text-sm`}
+                className={`grid grid-cols-[140px,1.2fr,1fr,1fr,100px,100px,90px] sm:grid-cols-[160px,1.2fr,1fr,1fr,120px,120px,100px] items-center px-2 py-3 ${rowBg} hover:bg-gray-100 transition text-xs sm:text-sm animate-slide-up`}
+                style={{ animationDelay: `${idx * 40}ms` }}
               >
-                <div className="px-2 text-text-secondary text-sm">{tx.date.toLocaleDateString('pt-BR')}</div>
+                <div className="px-2 text-text-secondary text-sm">{formatDate(tx.date)}</div>
                 <div className="px-2 text-text-primary font-semibold flex items-center gap-2">
                   <span
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -349,9 +349,9 @@ export default function Transactions() {
   )
 }
 
-function SummaryCard({ label, value, positive = false }: { label: string; value: string; positive?: boolean }) {
+function SummaryCard({ label, value, positive = false, delay = 0 }: { label: string; value: string; positive?: boolean; delay?: number }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1">
+    <div className="rounded-xl border border-border bg-white p-4 flex flex-col gap-1 animate-scale-up" style={{ animationDelay: `${delay}ms` }}>
       <span className="text-sm text-text-secondary">{label}</span>
       <span className={`text-heading-md font-semibold ${positive ? 'text-green-600' : 'text-text-primary'}`}>{value}</span>
     </div>

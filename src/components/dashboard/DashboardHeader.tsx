@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
 import { FilterPopover, FilterModal } from './FilterPopover'
 import { DateRangePicker } from './DateRangePicker'
+import { formatDateRange } from '../../utils'
 import type { DateRange } from '../../types'
-
-const formatRangeLabel = (range: DateRange | null) => {
-  if (!range) return 'Selecionar período'
-  const endDate = range.endDate ?? range.startDate
-  const start = format(range.startDate, 'dd LLL', { locale: ptBR })
-  const end = format(endDate, 'dd LLL', { locale: ptBR })
-  const year = format(endDate, 'yyyy', { locale: ptBR })
-  return `${start} - ${end}, ${year}`
-}
 
 const getCurrentMonthRange = (): DateRange => {
   const now = new Date()
@@ -84,7 +74,10 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const rangeLabel = useMemo(() => formatRangeLabel(filters.dateRange), [filters.dateRange])
+  const rangeLabel = useMemo(() => {
+    if (!filters.dateRange) return 'Selecionar período'
+    return formatDateRange(filters.dateRange.startDate, filters.dateRange.endDate)
+  }, [filters.dateRange])
 
   const handleFilterClick = () => {
     const desktop = window.matchMedia('(min-width: 1280px)').matches
@@ -123,7 +116,7 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
               rounded-full border border-border
               bg-bg-primary text-text-primary
               focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary
-              text-base
+              text-base transition-input
             "
           />
         </div>
@@ -138,6 +131,7 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
               flex items-center justify-center
               shadow-sm hover:bg-bg-secondary
               focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-bg-primary
+              transition-button
             "
             aria-label="Abrir filtros"
           >
@@ -169,6 +163,7 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
               text-text-primary font-medium
               hover:bg-bg-secondary
               focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-bg-primary
+              transition-button
             "
           >
             <Icon name="calendar" className="w-5 h-5" />
@@ -200,7 +195,7 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
                     relative w-11 h-11 rounded-full border-2 border-bg-primary
                     bg-bg-secondary text-text-primary font-semibold
                     flex items-center justify-center overflow-hidden
-                    transition-all duration-150
+                    transition-avatar
                     ${selected ? 'ring-2 ring-text-primary scale-105 z-20' : 'hover:scale-105'}
                     ${index > 0 ? '-ml-3' : ''}
                   `}
@@ -239,6 +234,7 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
               bg-bg-primary text-text-primary
               flex items-center justify-center
               shadow-sm hover:bg-bg-secondary
+              transition-button
             "
             aria-label="Adicionar membro"
             onClick={onAddMember}
@@ -257,6 +253,7 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
             shadow-sm hover:opacity-90
             w-full sm:w-auto
             min-h-[48px]
+            transition-button
           "
           onClick={onNewTransaction}
         >

@@ -40,7 +40,8 @@ src/
 │       ├── Icon.tsx
 │       ├── CurrencyInput.tsx
 │       ├── Tooltip.tsx
-│       └── ModalWrapper.tsx
+│       ├── ModalWrapper.tsx    # Wrapper para modais com animações
+│       └── Toast.tsx           # Notificações toast centralizadas
 ├── context/            # React Contexts para estado global
 │   ├── AuthContext.tsx      # Autenticação de usuários
 │   └── FinanceContext.tsx   # Gerenciamento financeiro completo
@@ -103,7 +104,10 @@ O projeto requer configuração do Supabase para funcionar completamente:
    VITE_SUPABASE_ANON_KEY=sua-chave-anon
    ```
 3. Execute o schema SQL em `supabase/schema.sql` no seu projeto Supabase
-4. Crie um bucket chamado `avatars` no Storage do Supabase para upload de imagens
+4. **Configure o bucket de avatares**:
+   - Crie um bucket chamado `avatars` no Storage do Supabase
+   - Configure políticas RLS (Row Level Security) para permitir uploads autenticados
+   - O sistema valida tipo de arquivo (image/png, image/jpeg) e tamanho máximo (5MB)
 
 ## 📐 Breakpoints Responsivos
 
@@ -139,14 +143,37 @@ O projeto utiliza variáveis CSS semânticas e primitivas mapeadas do design sys
 
 ## 🎭 Animações e Transições
 
-O sistema possui animações suaves e consistentes:
+O sistema possui animações suaves e consistentes implementadas globalmente:
 
-- **Transições de navegação**: Fade-out/fade-in (200ms)
-- **Cards**: Fade-in + slide-up (300ms) com stagger
-- **Modais**: Overlay fade-in (200ms) + modal scale-in (250ms)
-- **Toasts**: Slide-in da direita (300ms)
-- **Hover**: Transições suaves em botões e cards
-- **Respeita `prefers-reduced-motion`**: Desabilita animações quando necessário
+### Animações de Entrada
+- **Fade-in**: Opacidade 0 → 1 (200ms)
+- **Slide-up**: Desliza de baixo para cima com fade (300ms)
+- **Slide-down**: Desliza de cima para baixo (200ms)
+- **Slide-in-right**: Desliza da direita (300ms) - usado em toasts
+- **Scale-in**: Escala de 0.95 → 1 com fade (250ms) - usado em modais
+- **Scale-up**: Escala de 0.8 → 1 com fade (400ms)
+
+### Stagger (Entrada Escalonada)
+- Cards e listas usam `animationDelay` incremental (0ms, 50ms, 100ms...)
+- Cria efeito visual de entrada sequencial e profissional
+
+### Transições Globais
+Classes utilitárias aplicadas em componentes interativos:
+- **`.transition-button`**: Transição suave de background-color (200ms)
+- **`.transition-card`**: Transform e box-shadow com hover (250ms)
+- **`.transition-avatar`**: Scale no hover (200ms)
+- **`.transition-input`**: Border-color suave (200ms)
+- **`.transition-toggle`**: Scale no active (150ms)
+
+### Componentes com Animações
+- **Modais**: Usam `ModalWrapper` com overlay fade-in + modal scale-in/out
+- **Toasts**: Slide-in-right na entrada, slide-out-right na saída
+- **Cards**: Animações de entrada com stagger em `SummaryCards` e `TransactionsTable`
+- **Tabela de Transações**: Versão mobile-first com cards animados (<768px) e tabela desktop (≥768px)
+
+### Acessibilidade
+- **Respeita `prefers-reduced-motion`**: Desabilita/reduz animações quando necessário
+- Todas as animações têm duração controlada e não bloqueiam interações
 
 ## 📝 Entidades Principais
 
@@ -176,12 +203,12 @@ O sistema gerencia 5 entidades principais:
 - Transições suaves de página
 
 ### ✅ Dashboard
-- Cards de resumo financeiro (Saldo, Receitas, Despesas)
-- Carrossel de gastos por categoria
+- Cards de resumo financeiro (Saldo, Receitas, Despesas) com animações stagger
+- Carrossel de gastos por categoria com drag/swipe
 - Gráfico de fluxo financeiro
 - Widget de cartões de crédito
 - Próximas despesas
-- Tabela de transações com paginação
+- **Tabela de transações responsiva**: Cards no mobile (<768px), tabela completa no desktop (≥768px), com paginação e animações
 
 ### ✅ Gerenciamento de Transações
 - Adicionar nova transação (receita/despesa)
@@ -193,9 +220,10 @@ O sistema gerencia 5 entidades principais:
 ### ✅ Gerenciamento de Membros
 - Adicionar membros da família
 - Editar perfil de membros
-- Upload de avatar para Supabase Storage
-- Perfil individual com estatísticas
-- Filtros por membro
+- Upload de avatar para Supabase Storage (bucket `avatars` com validação de tipo e tamanho)
+- Perfil individual com estatísticas financeiras filtradas
+- Filtros por membro em todas as visualizações
+- Tooltips informativos em ações importantes
 
 ### ✅ Gerenciamento de Cartões e Contas
 - Adicionar cartões de crédito
@@ -211,12 +239,33 @@ O sistema gerencia 5 entidades principais:
 - Seletor de período de datas
 - Filtros combinados (AND lógico)
 
-### ✅ Formatação e Utilitários
-- Formatação de moeda brasileira (R$ 1.234,56)
-- Formatação de datas (DD/MM/AAAA)
-- Formatação compacta para gráficos
-- Validações (email, CPF, datas)
-- Cálculos financeiros (percentuais, diferenças)
+### ✅ Formatação e Utilitários Centralizados
+Todos os formatadores e utilitários estão centralizados em `src/utils/`:
+
+**Formatação de Moeda** (`currency.utils.ts`):
+- `formatCurrency(value)`: R$ 1.234,56
+- `formatCompactCurrency(value)`: R$ 2,5k ou R$ 1,2M
+- `parseCurrencyInput(input)`: Converte string de input para número
+
+**Formatação de Datas** (`date.utils.ts`):
+- `formatDate(date)`: DD/MM/AAAA
+- `formatDateLong(date)`: 15 de Janeiro de 2024
+- `formatDateRange(start, end)`: 01 jan - 31 jan, 2024
+- `formatRelativeDate(date)`: Hoje, Ontem, Há 3 dias
+
+**Validações** (`validation.utils.ts`):
+- Validação de email, CPF, datas, números positivos
+
+**Cálculos** (`calculation.utils.ts`):
+- Percentuais, diferenças, médias
+
+**Arrays** (`array.utils.ts`):
+- Agrupamento, ordenação, filtros
+
+**IDs** (`id.utils.ts`):
+- Geração de IDs únicos
+
+Todos os componentes usam esses utilitários centralizados, eliminando duplicação de código.
 
 ### ✅ Acessibilidade
 - Navegação completa por teclado
@@ -224,6 +273,9 @@ O sistema gerencia 5 entidades principais:
 - aria-labels em botões de ícone
 - Contraste WCAG AA
 - Suporte a leitores de tela
+- **Respeita `prefers-reduced-motion`**: Animações desabilitadas/reduzidas quando necessário
+- Modais fecham com tecla Escape e clique fora
+- Toasts com duração configurável e fechamento automático
 
 ## 🧪 Testes e Validação
 

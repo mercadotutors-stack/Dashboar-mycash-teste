@@ -3,6 +3,8 @@ import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
 import type { TransactionType } from '../../types'
+import { ModalWrapper } from '../ui/ModalWrapper'
+import { Toast } from '../ui/Toast'
 
 type Props = {
   open: boolean
@@ -150,7 +152,11 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
   const selectedCatList = state.type === 'income' ? categoriesByType.income : categoriesByType.expense
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white animate-fade-in">
+    <ModalWrapper
+      open={open}
+      onClose={onClose}
+      className="w-full h-full sm:max-h-[90vh] bg-white flex flex-col"
+    >
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-4">
           <div className={`w-16 h-16 rounded-full ${iconBg} flex items-center justify-center text-text-primary`}>
@@ -423,11 +429,7 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
         </button>
       </footer>
 
-      {toast ? (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg">
-          {toast}
-        </div>
-      ) : null}
-    </div>
+      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+    </ModalWrapper>
   )
 }

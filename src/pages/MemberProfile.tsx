@@ -9,13 +9,7 @@ import { ExpensesByCategoryCarousel } from '../components/dashboard/ExpensesByCa
 import { FinancialFlowChart } from '../components/dashboard/FinancialFlowChart'
 import { TransactionsTable } from '../components/dashboard/TransactionsTable'
 import { ROUTES } from '../constants'
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
+import { formatCurrency } from '../utils'
 
 export default function MemberProfile() {
   const { memberId } = useParams<{ memberId: string }>()

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { ModalWrapper } from '../ui/ModalWrapper'
+import { formatCurrency, formatDate as formatDateUtil } from '../../utils'
 
 type Props = {
   cardId: string | null
@@ -10,9 +12,6 @@ type Props = {
   onEdit?: (cardId: string) => void
   onViewStatement?: (cardId: string) => void
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, onViewStatement }: Props) {
   const { creditCards, transactions } = useFinance()
@@ -35,7 +34,11 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
   if (!open || !card) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white animate-fade-in">
+    <ModalWrapper
+      open={open && !!card}
+      onClose={onClose}
+      className="w-full h-full sm:max-h-[90vh] bg-white flex flex-col"
+    >
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4 bg-white">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center">
@@ -50,7 +53,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
         </div>
         <button
           onClick={onClose}
-          className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
+          className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100 transition-button"
           aria-label="Fechar modal"
         >
           <Icon name="close" className="w-6 h-6 text-text-primary" />
@@ -102,7 +105,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
                     }`}
                   >
                     <div className="px-2 text-text-secondary text-sm">
-                      {tx.date.toLocaleDateString('pt-BR')}
+                      {formatDateUtil(tx.date)}
                     </div>
                     <div className="px-2 text-text-primary">{tx.description}</div>
                     <div className="px-2 text-text-secondary text-sm">{tx.category}</div>
@@ -120,7 +123,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className={`h-9 px-3 rounded-full border border-border text-body ${
+                  className={`h-9 px-3 rounded-full border border-border text-body transition-button ${
                     page === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-text-secondary hover:bg-gray-100'
                   }`}
                 >
@@ -132,7 +135,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className={`h-9 px-3 rounded-full border border-border text-body ${
+                  className={`h-9 px-3 rounded-full border border-border text-body transition-button ${
                     page === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-text-secondary hover:bg-gray-100'
                   }`}
                 >
@@ -148,33 +151,33 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
         <button
           type="button"
           onClick={() => card.id && onViewStatement?.(card.id)}
-          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100"
+          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 transition-button"
         >
           Ver Extrato Completo
         </button>
         <button
           type="button"
           onClick={() => card.id && onAddExpense?.(card.id)}
-          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100"
+          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 transition-button"
         >
           Adicionar Despesa
         </button>
         <button
           type="button"
           onClick={() => card.id && onEdit?.(card.id)}
-          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100"
+          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 transition-button"
         >
           Editar Cartão
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="h-11 px-5 rounded-full bg-black text-white font-semibold hover:opacity-90"
+          className="h-11 px-5 rounded-full bg-black text-white font-semibold hover:opacity-90 transition-button"
         >
           Fechar
         </button>
       </footer>
-    </div>
+    </ModalWrapper>
   )
 }
 

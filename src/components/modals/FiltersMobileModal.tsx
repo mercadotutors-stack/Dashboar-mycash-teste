@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
 import type { DateRange, TransactionType } from '../../types'
+import { ModalWrapper } from '../ui/ModalWrapper'
 
 type Props = {
   open: boolean
@@ -31,11 +32,13 @@ export function FiltersMobileModal({ open, onClose }: Props) {
     onClose()
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
-      <div className="w-full h-full bg-white rounded-t-3xl shadow-2xl animate-fade-in flex flex-col">
+    <ModalWrapper
+      open={open}
+      onClose={onClose}
+      className="w-full h-full flex items-end"
+    >
+      <div className="w-full h-full bg-white rounded-t-3xl shadow-2xl animate-slide-up flex flex-col">
         <header className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-white">
           <h3 className="text-heading-lg font-semibold text-text-primary">Filtros</h3>
           <button
@@ -141,7 +144,7 @@ export function FiltersMobileModal({ open, onClose }: Props) {
           </button>
         </footer>
       </div>
-    </div>
+    </ModalWrapper>
   )
 }
 

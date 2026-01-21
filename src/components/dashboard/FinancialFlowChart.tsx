@@ -10,21 +10,7 @@ import {
 import { Icon } from '../ui/Icon'
 import { useFinance } from '../../context/FinanceContext'
 import { useMemo } from 'react'
-
-const formatCompactCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value)
-
-const formatFullCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-  }).format(value)
+import { formatCurrency, formatCompactCurrency } from '../../utils'
 
 // Nomes dos meses em português
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -73,7 +59,7 @@ export function FinancialFlowChart() {
   }, [transactions])
 
   return (
-    <div className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm">
+    <div className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm animate-slide-up">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Icon name="chart" className="w-6 h-6 text-text-primary" />
@@ -129,8 +115,8 @@ export function FinancialFlowChart() {
                 return (
                   <div className="rounded-lg border border-border bg-white px-4 py-3 shadow-lg text-sm">
                     <div className="font-semibold text-text-primary mb-1">{label}</div>
-                    <div className="text-[#15803D]">Receitas: {formatFullCurrency(income)}</div>
-                    <div className="text-[#0B0B12]">Despesas: {formatFullCurrency(expense)}</div>
+                    <div className="text-[#15803D]">Receitas: {formatCurrency(income)}</div>
+                    <div className="text-[#0B0B12]">Despesas: {formatCurrency(expense)}</div>
                   </div>
                 )
               }}

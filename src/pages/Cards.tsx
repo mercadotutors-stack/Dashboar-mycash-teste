@@ -5,9 +5,7 @@ import { AddAccountCardModal } from '../components/modals/AddAccountCardModal'
 import { EditAccountCardModal } from '../components/modals/EditAccountCardModal'
 import { CardDetailsModal } from '../components/modals/CardDetailsModal'
 import { NewTransactionModal } from '../components/modals/NewTransactionModal'
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+import { formatCurrency } from '../utils'
 
 export default function Cards() {
   const { creditCards, deleteCreditCard } = useFinance()
@@ -27,8 +25,8 @@ export default function Cards() {
   const emptyState = sortedCards.length === 0
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen w-full bg-bg-primary px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6 animate-fade-in">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between animate-slide-up">
         <h1 className="text-heading-xl font-bold text-text-primary">Cartões de Crédito</h1>
         <button
           type="button"
@@ -55,7 +53,7 @@ export default function Cards() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-          {sortedCards.map((card) => {
+          {sortedCards.map((card, idx) => {
             const available = card.limit - card.currentBill
             const usage = (card.currentBill / card.limit) * 100
             const themeClasses =
@@ -68,7 +66,8 @@ export default function Cards() {
             return (
               <div
                 key={card.id}
-                className={`rounded-2xl border-2 ${themeClasses} bg-white p-5 shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col gap-4`}
+                className={`rounded-2xl border-2 ${themeClasses} bg-white p-5 shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col gap-4 animate-scale-up`}
+                style={{ animationDelay: `${idx * 60}ms` }}
                 onClick={() => setDetailCardId(card.id)}
               >
                 <div className="flex items-start justify-between">

@@ -3,6 +3,8 @@ import { useFinance } from '../../context/FinanceContext'
 import { useAuth } from '../../context/AuthContext'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
+import { ModalWrapper } from '../ui/ModalWrapper'
+import { Toast } from '../ui/Toast'
 import { uploadImage } from '../../lib/uploadImage'
 
 type Props = {
@@ -93,154 +95,153 @@ export function AddMemberModal({ open, onClose }: Props) {
     }
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white animate-fade-in">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4 bg-white">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#C4E703] flex items-center justify-center">
-            <Icon name="person_add" className="w-7 h-7 text-black" />
-          </div>
-          <div className="flex flex-col">
-            <h2 className="text-heading-xl font-bold text-text-primary">Adicionar Membro da Família</h2>
-            <p className="text-text-secondary text-sm">
-              Adicione membros para organizar as finanças da família.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
-          aria-label="Fechar modal"
-        >
-          <Icon name="close" className="w-6 h-6 text-text-primary" />
-        </button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
-        <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
-          <div className="bg-white rounded-xl p-6 flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text-primary">Nome Completo</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                  errors.name ? 'border-red-500' : 'border-border'
-                }`}
-                placeholder="Ex: João Silva"
-              />
-              {errors.name ? <p className="text-sm text-red-600">{errors.name}</p> : null}
+    <ModalWrapper
+      open={open}
+      onClose={onClose}
+      className="w-full h-full sm:max-h-[90vh] bg-white flex flex-col"
+    >
+      <div className="flex flex-col flex-1">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4 bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-[#C4E703] flex items-center justify-center">
+              <Icon name="person_add" className="w-7 h-7 text-black" />
             </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text-primary">Função na Família</label>
-              <input
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                list="role-suggestions"
-                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                  errors.role ? 'border-red-500' : 'border-border'
-                }`}
-                placeholder="Ex: Pai, Mãe, Filho..."
-              />
-              <datalist id="role-suggestions">
-                {roleSuggestions.map((r) => (
-                  <option key={r} value={r} />
-                ))}
-              </datalist>
-              {errors.role ? <p className="text-sm text-red-600">{errors.role}</p> : null}
+            <div className="flex flex-col">
+              <h2 className="text-heading-xl font-bold text-text-primary">Adicionar Membro da Família</h2>
+              <p className="text-text-secondary text-sm">
+                Adicione membros para organizar as finanças da família.
+              </p>
             </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" className="w-6 h-6 text-text-primary" />
+          </button>
+        </header>
 
-            <div className="flex flex-col gap-4">
-              {/* Preview do avatar */}
-              {avatarUrl && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-text-primary">Preview do Avatar</label>
-                  <div className="w-24 h-24 rounded-full border border-border overflow-hidden bg-gray-100 flex items-center justify-center">
-                    <img
-                      src={avatarUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.style.display = 'none'
+        <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
+          <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
+            <div className="bg-white rounded-xl p-6 flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-text-primary">Nome Completo</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                    errors.name ? 'border-red-500' : 'border-border'
+                  }`}
+                  placeholder="Ex: João Silva"
+                />
+                {errors.name ? <p className="text-sm text-red-600">{errors.name}</p> : null}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-text-primary">Função na Família</label>
+                <input
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  list="role-suggestions"
+                  className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                    errors.role ? 'border-red-500' : 'border-border'
+                  }`}
+                  placeholder="Ex: Pai, Mãe, Filho..."
+                />
+                <datalist id="role-suggestions">
+                  {roleSuggestions.map((r) => (
+                    <option key={r} value={r} />
+                  ))}
+                </datalist>
+                {errors.role ? <p className="text-sm text-red-600">{errors.role}</p> : null}
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {avatarUrl && (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-text-primary">Preview do Avatar</label>
+                    <div className="w-24 h-24 rounded-full border border-border overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <img
+                        src={avatarUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-text-primary">Avatar (URL)</label>
+                    <input
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      className="h-12 rounded-full border border-border bg-white px-4 text-body text-text-primary outline-none"
+                      placeholder="https://imagem.com/avatar.png"
+                    />
+                    <span className="text-xs text-text-secondary">Ou deixe vazio para usar avatar padrão.</span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-text-primary">Upload (JPG/PNG até 5MB)</label>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      className="text-sm text-text-secondary"
+                      disabled={isUploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        handleFileUpload(file)
                       }}
                     />
+                    {uploadProgress && (
+                      <span className="text-xs text-text-primary font-medium">{uploadProgress}</span>
+                    )}
+                    {!uploadProgress && (
+                      <span className="text-xs text-text-secondary">
+                        {isUploading ? 'Fazendo upload...' : 'Selecione uma imagem para fazer upload'}
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-text-primary">Avatar (URL)</label>
-                  <input
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    className="h-12 rounded-full border border-border bg-white px-4 text-body text-text-primary outline-none"
-                    placeholder="https://imagem.com/avatar.png"
-                  />
-                  <span className="text-xs text-text-secondary">Ou deixe vazio para usar avatar padrão.</span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-text-primary">Upload (JPG/PNG até 5MB)</label>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    className="text-sm text-text-secondary"
-                    disabled={isUploading}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      handleFileUpload(file)
-                    }}
-                  />
-                  {uploadProgress && (
-                    <span className="text-xs text-text-primary font-medium">{uploadProgress}</span>
-                  )}
-                  {!uploadProgress && (
-                    <span className="text-xs text-text-secondary">
-                      {isUploading ? 'Fazendo upload...' : 'Selecione uma imagem para fazer upload'}
-                    </span>
-                  )}
-                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-text-primary">Renda Mensal Estimada (opcional)</label>
-              <CurrencyInput
-                value={income}
-                onChange={(value) => setIncome(value)}
-                placeholder="0,00"
-              />
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-text-primary">Renda Mensal Estimada (opcional)</label>
+                <CurrencyInput
+                  value={income}
+                  onChange={(value) => setIncome(value)}
+                  placeholder="0,00"
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        <footer className="sticky bottom-0 z-10 border-t border-border bg-white px-6 py-4 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 px-6 rounded-full border border-border text-text-primary hover:bg-gray-100"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="h-11 px-6 rounded-full bg-black text-white font-semibold hover:opacity-90"
+          >
+            Adicionar Membro
+          </button>
+        </footer>
       </div>
 
-      <footer className="sticky bottom-0 z-10 border-t border-border bg-white px-6 py-4 flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-11 px-6 rounded-full border border-border text-text-primary hover:bg-gray-100"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="h-11 px-6 rounded-full bg-black text-white font-semibold hover:opacity-90"
-        >
-          Adicionar Membro
-        </button>
-      </footer>
-
-      {toast ? (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
-          {toast}
-        </div>
-      ) : null}
-    </div>
+      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
+    </ModalWrapper>
   )
 }

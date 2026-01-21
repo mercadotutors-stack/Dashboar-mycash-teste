@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
+import { formatCurrency, formatDate } from '../../utils'
 
 type PendingExpense = {
   id: string
@@ -12,19 +13,6 @@ type PendingExpense = {
   isRecurring?: boolean
   installments?: number
   currentInstallment?: number
-}
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
-
-const formatDate = (value: Date) => {
-  const day = value.getDate().toString().padStart(2, '0')
-  const month = (value.getMonth() + 1).toString().padStart(2, '0')
-  return `${day}/${month}`
 }
 
 const sortExpenses = (list: PendingExpense[]) =>
@@ -165,7 +153,7 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm flex flex-col gap-4">
+    <section className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm flex flex-col gap-4 animate-slide-up">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Icon name="credit-card" className="w-5 h-5 text-text-primary" />
@@ -192,7 +180,7 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
             isCompact ? 'max-h-[420px] overflow-y-auto no-scrollbar pr-2 snap-y snap-mandatory' : ''
           }`}
         >
-          {expenses.map((expense) => {
+          {expenses.map((expense, idx) => {
             const isRemoving = removingId === expense.id
             const isActive = activeId === expense.id
             const originLabel = resolvePaymentSource(expense)
@@ -202,7 +190,8 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
                 key={expense.id}
                 className={`flex items-start justify-between gap-4 ${isCompact ? 'py-4' : 'py-6'} transition-all duration-200 ease-out ${
                   isRemoving ? 'opacity-0 -translate-y-1' : ''
-                } ${isCompact ? 'snap-start' : ''}`}
+                } ${isCompact ? 'snap-start' : ''} animate-slide-up`}
+                style={{ animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex flex-col gap-1">
                   <span className="text-heading-md font-semibold text-text-primary">
@@ -226,7 +215,7 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
                   <button
                     type="button"
                     onClick={() => handleMarkAsPaid(expense.id)}
-                    className={`w-8 h-8 rounded-full border flex items-center justify-center text-text-primary transition-colors duration-200 ${
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center text-text-primary transition-button ${
                       isActive
                         ? 'bg-green-50 border-green-500 text-green-600'
                         : 'border-border hover:bg-green-50 hover:border-green-500 hover:text-green-600'

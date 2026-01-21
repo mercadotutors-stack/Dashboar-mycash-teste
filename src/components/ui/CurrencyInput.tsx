@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ChangeEvent, type FocusEvent } from 'react'
+import { formatCurrency, parseCurrencyInput } from '../../utils'
 
 interface CurrencyInputProps {
   value: number | string
@@ -28,23 +29,17 @@ export function CurrencyInput({
   // Converte número para string formatada (ex: 1000.50 -> "1.000,50")
   const formatToDisplay = (num: number | string): string => {
     if (num === '' || num === null || num === undefined) return ''
-    const numValue = typeof num === 'string' ? parseFloat(num.replace(/[^\d,]/g, '').replace(',', '.')) || 0 : num
-    if (isNaN(numValue)) return ''
+    const numValue = typeof num === 'string' ? parseCurrencyInput(num) : num
+    if (isNaN(numValue) || numValue === 0) return ''
     
-    return new Intl.NumberFormat('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(numValue)
+    // Remove o "R$ " do formatCurrency e retorna apenas o valor formatado
+    return formatCurrency(numValue).replace('R$ ', '')
   }
 
   // Converte string formatada para número (ex: "1.000,50" -> 1000.50)
   const parseFromDisplay = (str: string): number => {
     if (!str) return 0
-    // Remove tudo exceto dígitos e vírgula
-    const cleaned = str.replace(/[^\d,]/g, '')
-    // Substitui vírgula por ponto
-    const normalized = cleaned.replace(',', '.')
-    const parsed = parseFloat(normalized) || 0
+    const parsed = parseCurrencyInput(str)
     return Math.max(min, parsed)
   }
 

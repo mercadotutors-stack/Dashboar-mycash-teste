@@ -9,27 +9,6 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
-
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/44256b10-28d3-49da-af14-981df50490d6', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'run1',
-      hypothesisId: 'H1',
-      location: 'Sidebar.tsx:render',
-      message: 'Sidebar render props/state',
-      data: {
-        isExpanded,
-        width: isExpanded ? '300px' : '72px',
-        padding: isExpanded ? '32px (px-8 py-8)' : '16px top/bottom, 16px sides (px-4 py-6)',
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
-
   return (
     <aside
       className={`

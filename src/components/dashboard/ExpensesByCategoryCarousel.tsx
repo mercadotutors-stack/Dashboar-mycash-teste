@@ -1,13 +1,7 @@
 import { useMemo, useRef, useState, useEffect, type MouseEvent } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
+import { formatCurrency } from '../../utils'
 
 const donutColors = [
   'var(--color-sidebar-active)', // lime
@@ -63,9 +57,10 @@ interface CategoryDonutCardProps {
   amount: number
   percent: number
   color: string
+  delay?: number
 }
 
-function CategoryDonutCard({ name, amount, percent, color }: CategoryDonutCardProps) {
+function CategoryDonutCard({ name, amount, percent, color, delay = 0 }: CategoryDonutCardProps) {
   return (
     <div
       className="
@@ -75,7 +70,9 @@ function CategoryDonutCard({ name, amount, percent, color }: CategoryDonutCardPr
         flex flex-col items-center gap-4
         transition-colors duration-200
         hover:border-sidebar-active
+        animate-scale-up
       "
+      style={{ animationDelay: `${delay}ms` }}
     >
       <Donut percent={percent} color={color} />
       <div className="text-sm text-text-primary text-center truncate w-full">{name}</div>
@@ -185,7 +182,7 @@ export function ExpensesByCategoryCarousel() {
 
   return (
     <div
-      className="relative"
+      className="relative animate-slide-up"
       onMouseEnter={() => setIsHover(true)}
       onMouseLeave={() => {
         setIsHover(false)
@@ -215,6 +212,7 @@ export function ExpensesByCategoryCarousel() {
               amount={item.total}
               percent={percent}
               color={color}
+              delay={index * 50}
             />
           )
         })}
