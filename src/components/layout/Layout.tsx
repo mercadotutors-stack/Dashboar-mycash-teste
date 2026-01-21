@@ -41,6 +41,7 @@ export function Layout() {
           flex-1 min-w-0 w-full
           transition-all duration-300 ease-in-out
           pt-16 sm:pt-20 lg:pt-0
+          animate-fade-in
         `}
       >
         <Outlet />

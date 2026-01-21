@@ -53,6 +53,11 @@ body {
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* ============================================
+   ANIMAÇÕES GLOBAIS - PROMPT 21
+   ============================================ */
+
+/* Fade In */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -62,11 +67,232 @@ body {
   }
 }
 
+/* Fade Out */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Slide Up */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide Down */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide In Right */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide Out Right */
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Scale In */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scale Out */
+@keyframes scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Scale Up */
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Progress Fill */
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+}
+
+/* ============================================
+   CLASSES DE ANIMAÇÃO
+   ============================================ */
+
 .animate-fade-in {
   animation: fade-in 200ms ease-out;
 }
 
-/* Prefer reduced motion */
+.animate-fade-out {
+  animation: fade-out 200ms ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 300ms ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 200ms ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 300ms ease-out;
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 250ms ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 250ms ease-out;
+}
+
+.animate-scale-out {
+  animation: scale-out 200ms ease-out;
+}
+
+.animate-scale-up {
+  animation: scale-up 400ms ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 1500ms ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2000ms linear infinite;
+  background: linear-gradient(
+    to right,
+    var(--gray-100) 0%,
+    var(--gray-200) 20%,
+    var(--gray-100) 40%,
+    var(--gray-100) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+.animate-progress-fill {
+  animation: progress-fill 1000ms ease-out forwards;
+}
+
+/* ============================================
+   TRANSIÇÕES GLOBAIS
+   ============================================ */
+
+/* Transições de botões */
+.transition-button {
+  transition: background-color 200ms ease-in-out;
+}
+
+/* Transições de cards */
+.transition-card {
+  transition: transform 250ms ease-out, box-shadow 250ms ease-out;
+}
+
+.transition-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Transições de avatares */
+.transition-avatar {
+  transition: transform 200ms ease-in-out;
+}
+
+.transition-avatar:hover {
+  transform: scale(1.1);
+}
+
+/* Transições de inputs */
+.transition-input {
+  transition: border-color 200ms ease-in-out;
+}
+
+/* Transições de checkboxes/toggles */
+.transition-toggle {
+  transition: transform 150ms ease-out;
+}
+
+.transition-toggle:active {
+  transform: scale(1.1);
+}
+
+/* ============================================
+   PREFER REDUCED MOTION
+   ============================================ */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -74,5 +300,6 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
