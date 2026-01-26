@@ -27,7 +27,9 @@ export function UserProfile({ isExpanded }: UserProfileProps) {
     const userEmail = user.email.toLowerCase()
     
     // Primeiro tenta encontrar por email
-    const foundByEmail = familyMembers.find((member) => member.email.toLowerCase() === userEmail)
+    const foundByEmail = familyMembers.find((member) => 
+      member.email && member.email.toLowerCase() === userEmail
+    )
     if (foundByEmail) return foundByEmail
     
     // Se não encontrar, usa o primeiro membro (dono da conta)

@@ -78,7 +78,7 @@ export function AddMemberModal({ open, onClose }: Props) {
       await addFamilyMember({
         name: name.trim(),
         role: role.trim(),
-        email: undefined, // Email é opcional, não envia se não fornecido
+        // email é opcional, não precisa ser enviado
         monthlyIncome: income,
         avatarUrl: avatarUrl || undefined,
       })

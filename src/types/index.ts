@@ -100,7 +100,7 @@ export interface FamilyMember {
   id: string;
   name: string;
   role: string; // Ex: "Pai", "Mãe", "Filho", "Avô", etc
-  email: string;
+  email?: string; // Email do membro (opcional)
   avatarUrl?: string; // URL do avatar (ou padrão se não fornecido)
   monthlyIncome?: number; // Renda mensal estimada (opcional)
   createdAt: Date;
