@@ -31,6 +31,8 @@ import {
   ArrowLeftIcon,
   EnvelopeIcon,
   EyeIcon,
+  FolderIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline'
 import type { ComponentType, SVGProps } from 'react'
 
@@ -95,4 +97,8 @@ const iconMap: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   attach_money: CurrencyDollarIcon,
   south_west: ArrowTrendingDownIcon,
   north_east: ArrowTopRightOnSquareIcon,
+
+  // Workspace
+  workspace_premium: FolderIcon,
+  image: PhotoIcon,
 }
