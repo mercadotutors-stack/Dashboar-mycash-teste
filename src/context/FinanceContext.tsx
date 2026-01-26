@@ -319,10 +319,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
       const purchaseDate = input.purchaseDate ?? input.date ?? new Date()
       const firstInstallmentDate = input.firstInstallmentDate ?? input.date ?? new Date()
-      const parentTransactionId =
-        input.parentTransactionId ??
-        (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`)
-
       const addMonths = (date: Date, months: number) => {
         const d = new Date(date)
         const day = d.getDate()
@@ -363,7 +359,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           total_installments: totalInstallments,
           installment_number: globalIndex + 1,
           paid_installments: paidInstallments,
-          parent_transaction_id: parentTransactionId,
+          parent_transaction_id: null,
           is_recurring: input.isRecurring ?? false,
           status: 'PENDING',
           notes: null,
@@ -389,7 +385,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         paidInstallments: row.paid_installments ?? 0,
         purchaseDate: row.purchase_date ? toDate(row.purchase_date) : undefined,
         firstInstallmentDate: row.first_installment_date ? toDate(row.first_installment_date) : undefined,
-        parentTransactionId: row.parent_transaction_id ?? parentTransactionId ?? null,
+        parentTransactionId: row.parent_transaction_id ?? null,
         status: mapStatus(row.status),
         isRecurring: Boolean(row.is_recurring),
         isPaid: mapStatus(row.status) === 'completed',
