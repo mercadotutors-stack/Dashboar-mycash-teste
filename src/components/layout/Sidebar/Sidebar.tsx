@@ -70,11 +70,11 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           {/* Navegação (32px abaixo do logo no desktop) */}
           <div className="flex flex-col gap-3 mt-8 w-full">
             {/* Workspace Switcher no sidebar (estilo card) */}
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm">
-              <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Icon name="workspace_premium" className="w-5 h-5 text-text-primary" />
-                  <span className="text-sm font-semibold text-text-primary">Workspaces</span>
+                  <span className="text-sm font-semibold leading-none text-text-primary">Workspaces</span>
                 </div>
                 <button
                   type="button"
@@ -90,25 +90,30 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                       alert('Erro ao criar workspace')
                     }
                   }}
-                  className="h-9 px-3 rounded-full border border-border text-sm font-semibold text-text-primary hover:bg-bg-secondary transition flex items-center gap-1"
+                  className="h-9 px-4 rounded-full border border-border text-sm font-semibold text-text-primary hover:bg-bg-secondary transition flex items-center gap-2"
                 >
                   <Icon name="add" className="w-4 h-4" />
                   <span>Novo</span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full">
                 <Icon name="folder" className="w-4 h-4 text-text-secondary" />
                 <select
-                  value={activeWorkspaceId}
+                  value={activeWorkspaceId || ''}
                   onChange={(e) => setActiveWorkspace(e.target.value)}
-                  className="h-10 flex-1 rounded-full border border-border bg-bg-primary px-3 text-sm text-text-primary outline-none"
+                  disabled={!workspaces.length}
+                  className="h-10 flex-1 rounded-full border border-border bg-bg-primary px-4 text-sm text-text-primary outline-none"
                 >
-                  {workspaces.map((ws) => (
-                    <option key={ws.id} value={ws.id}>
-                      {ws.name}
-                    </option>
-                  ))}
+                  {!workspaces.length ? (
+                    <option value="">Nenhum workspace</option>
+                  ) : (
+                    workspaces.map((ws) => (
+                      <option key={ws.id} value={ws.id}>
+                        {ws.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
