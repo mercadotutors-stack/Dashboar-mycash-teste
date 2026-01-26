@@ -13,27 +13,24 @@ type BillItem = {
   cardName: string
   lastDigits?: string
   amount: number
+  start: Date
   end: Date
   monthKey: string
+  closingDay: number
+  dueDay?: number
 }
 
-const getCycleRange = (closingDay: number, reference: Date) => {
+// Próxima fatura: primeiro fechamento após hoje
+const getNextInvoiceRange = (closingDay: number, reference = new Date()) => {
   const today = new Date(reference)
   const day = today.getDate()
   const close = Math.min(Math.max(closingDay || 1, 1), 28)
 
-  let start: Date
-  let end: Date
-
+  let end = new Date(today.getFullYear(), today.getMonth(), close)
   if (day > close) {
-    // Ciclo atual termina no próximo mês (ex: 11/jan a 10/fev)
-    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
     end = new Date(today.getFullYear(), today.getMonth() + 1, close)
-  } else {
-    // Ciclo atual termina neste mês (ex: 11/dez a 10/jan)
-    start = new Date(today.getFullYear(), today.getMonth() - 1, close + 1)
-    end = new Date(today.getFullYear(), today.getMonth(), close)
   }
+  const start = new Date(end.getFullYear(), end.getMonth() - 1, close + 1)
 
   start.setHours(0, 0, 0, 0)
   end.setHours(23, 59, 59, 999)
@@ -45,39 +42,39 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [selectedMonthKey, setSelectedMonthKey] = useState<string | undefined>(undefined)
 
-  // Calcula faturas (ciclo atual) por cartão
+  // Calcula próxima fatura por cartão (sempre o próximo fechamento, mesmo que valor 0)
   const bills = useMemo<BillItem[]>(() => {
     return creditCards.map((card) => {
-      const { start, end } = getCycleRange(card.closingDay ?? 1, new Date())
+      const { start, end } = getNextInvoiceRange(card.closingDay ?? 1, new Date())
       const amount = transactions
         .filter(
           (tx) =>
             tx.accountId === card.id &&
             tx.type === 'expense' &&
-            tx.status === 'pending' &&
+            tx.status !== 'cancelled' &&
             tx.date.getTime() >= start.getTime() &&
             tx.date.getTime() <= end.getTime(),
         )
         .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
 
-      const monthKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`
+      const monthKey = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`
 
       return {
         cardId: card.id,
         cardName: card.name,
         lastDigits: card.lastDigits,
         amount,
+        start,
         end,
         monthKey,
+        closingDay: card.closingDay ?? 1,
+        dueDay: card.dueDay,
       }
     })
   }, [creditCards, transactions])
 
-  // Ordena por valor desc e limita a 5
-  const visibleBills = bills
-    .filter((b) => b.amount > 0)
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5)
+  // Ordena por fechamento mais próximo e limita a 5 (mesmo valor 0 para exibir a próxima)
+  const visibleBills = bills.sort((a, b) => a.end.getTime() - b.end.getTime()).slice(0, 5)
 
   const handleOpenBill = (bill: BillItem) => {
     setSelectedCardId(bill.cardId)
@@ -128,6 +125,7 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
                 </div>
                 <div className="text-xs text-text-secondary">
                   Fecha {bill.end.toLocaleDateString('pt-BR')}
+                  {bill.dueDay ? ` • Vence ${String(bill.dueDay).padStart(2, '0')}` : ''}
                 </div>
               </div>
               <div className="text-sm font-semibold text-text-primary whitespace-nowrap">
