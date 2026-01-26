@@ -38,7 +38,7 @@ const themeStyles: Record<
 }
 
 export function CreditCardsWidget() {
-  const { creditCards, bankAccounts, transactions } = useFinance()
+  const { creditCards, bankAccounts } = useFinance()
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
@@ -127,9 +127,9 @@ export function CreditCardsWidget() {
               const card = item
               const style = themeStyles[(card.theme as Theme) || 'white'] || themeStyles.white
               
-              // Calcula a próxima fatura a vencer (mesma lógica do CardDetailsModal)
-              // Se hoje > closingDay: próxima fecha no próximo mês (período: close+1 deste mês até close do próximo)
-              // Se hoje <= closingDay: próxima fecha neste mês (período: close+1 do mês anterior até close deste mês)
+              // Calcula o ciclo de fatura atual (mesma lógica do CardDetailsModal)
+              // Se hoje > closingDay: ciclo atual fecha no próximo mês (período: close+1 deste mês até close do próximo)
+              // Se hoje <= closingDay: ciclo atual fecha neste mês (período: close+1 do mês anterior até close deste mês)
               const today = new Date()
               const day = today.getDate()
               const close = Math.min(Math.max(card.closingDay ?? 10, 1), 28)
@@ -138,13 +138,11 @@ export function CreditCardsWidget() {
               let end: Date
               
               if (day > close) {
-                // Já fechou este mês, próxima fatura fecha no próximo mês
-                // Ex: hoje 26/jan, close=10 → próxima fecha 10/fev (período: 11/jan até 10/fev)
+                // Já fechou este mês, ciclo atual termina no próximo mês (ex: 11/jan a 10/fev)
                 start = new Date(today.getFullYear(), today.getMonth(), close + 1)
                 end = new Date(today.getFullYear(), today.getMonth() + 1, close)
               } else {
-                // Ainda não fechou este mês, próxima fatura fecha neste mês
-                // Ex: hoje 5/jan, close=10 → próxima fecha 10/jan (período: 11/dez até 10/jan)
+                // Ainda não fechou este mês, ciclo atual termina neste mês (ex: 11/dez a 10/jan)
                 start = new Date(today.getFullYear(), today.getMonth() - 1, close + 1)
                 end = new Date(today.getFullYear(), today.getMonth(), close)
               }
@@ -152,21 +150,10 @@ export function CreditCardsWidget() {
               start.setHours(0, 0, 0, 0)
               end.setHours(23, 59, 59, 999)
               
-              // Filtra transações da próxima fatura (pendentes dentro do período)
-              const nextBillTransactions = transactions.filter((tx) => {
-                if (tx.accountId !== card.id) return false
-                if (tx.type !== 'expense') return false
-                if (tx.status !== 'pending') return false
-                
-                const txDate = tx.date.getTime()
-                const inRange = txDate >= start.getTime() && txDate <= end.getTime()
-                return inRange
-              })
-              
-              const nextBillAmount = nextBillTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0)
-              
-              const usage = Math.round((nextBillAmount / card.limit) * 100)
-              const nextBillMonth = format(end, 'MMM', { locale: ptBR })
+              // Usa a fatura atual derivada no contexto (já considera pendentes no ciclo)
+              const currentBillAmount = Number(card.currentBill ?? 0)
+              const usage = Math.round((currentBillAmount / card.limit) * 100)
+              const billMonth = format(end, 'MMM', { locale: ptBR })
               
               return (
                 <div
@@ -187,10 +174,10 @@ export function CreditCardsWidget() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-text-secondary truncate">{card.name}</div>
                     <div className="text-2xl font-bold text-text-primary leading-snug">
-                      {formatCurrency(nextBillAmount)}
+                      {formatCurrency(currentBillAmount)}
                     </div>
                     <div className="text-sm text-text-secondary">
-                      •••• {card.lastDigits || '****'} - {nextBillMonth}
+                      •••• {card.lastDigits || '****'} - {billMonth}
                     </div>
                   </div>
 
