@@ -1144,38 +1144,79 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (!userId) throw new Error('Usuário não autenticado')
       
       try {
-        const { data, error } = await supabase
+        // Primeiro, insere apenas as colunas obrigatórias para evitar problemas de cache do schema
+        const { data: insertData, error: insertError } = await supabase
           .from('workspaces')
           .insert({
             name: input.name,
             type: input.type ?? 'family',
             owner_id: userId,
-            subtitle: input.subtitle ?? null,
-            avatar_url: input.avatarUrl ?? null,
           })
-          .select('*')
+          .select('id')
           .single()
         
-        if (error) {
-          console.error('Erro ao criar workspace no banco:', error)
-          throw new Error(error.message || 'Erro ao criar workspace no banco de dados')
+        if (insertError) {
+          console.error('Erro ao criar workspace no banco:', insertError)
+          throw new Error(insertError.message || 'Erro ao criar workspace no banco de dados')
         }
         
-        if (!data) {
-          throw new Error('Workspace criado mas nenhum dado retornado')
+        if (!insertData?.id) {
+          throw new Error('Workspace criado mas nenhum ID retornado')
+        }
+        
+        const workspaceId = insertData.id
+        
+        // Se houver subtitle ou avatarUrl, atualiza após a criação
+        if (input.subtitle || input.avatarUrl) {
+          const updatePayload: any = {}
+          if (input.subtitle !== undefined) updatePayload.subtitle = input.subtitle
+          if (input.avatarUrl !== undefined) updatePayload.avatar_url = input.avatarUrl
+          
+          const { error: updateError } = await supabase
+            .from('workspaces')
+            .update(updatePayload)
+            .eq('id', workspaceId)
+          
+          if (updateError) {
+            console.warn('Erro ao atualizar subtitle/avatar_url do workspace:', updateError)
+            // Não bloqueia - workspace já foi criado
+          }
+        }
+        
+        // Busca o workspace completo após atualização
+        const { data: fullData, error: fetchError } = await supabase
+          .from('workspaces')
+          .select('*')
+          .eq('id', workspaceId)
+          .single()
+        
+        if (fetchError) {
+          console.warn('Erro ao buscar workspace completo:', fetchError)
+          // Usa dados básicos se não conseguir buscar completo
+          const ws: Workspace = {
+            id: workspaceId,
+            name: input.name,
+            type: input.type ?? 'family',
+            ownerId: userId,
+            subtitle: input.subtitle ?? null,
+            avatarUrl: input.avatarUrl ?? null,
+          }
+          setWorkspaces((prev) => [...prev, ws])
+          setActiveWorkspaceId(workspaceId)
+          return workspaceId
         }
         
         const ws: Workspace = {
-          id: data.id,
-          name: data.name,
-          type: data.type,
-          ownerId: data.owner_id,
-          subtitle: data.subtitle ?? null,
-          avatarUrl: data.avatar_url ?? null,
+          id: fullData.id,
+          name: fullData.name,
+          type: fullData.type,
+          ownerId: fullData.owner_id,
+          subtitle: fullData.subtitle ?? null,
+          avatarUrl: fullData.avatar_url ?? null,
         }
         setWorkspaces((prev) => [...prev, ws])
-        setActiveWorkspaceId(data.id)
-        return data.id as string
+        setActiveWorkspaceId(fullData.id)
+        return fullData.id as string
       } catch (err: any) {
         console.error('Erro completo ao criar workspace:', err)
         throw err instanceof Error ? err : new Error('Erro desconhecido ao criar workspace')
