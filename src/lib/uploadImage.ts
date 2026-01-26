@@ -12,42 +12,17 @@ import { supabase } from './supabaseClient'
  * 
  * ### 2. Políticas RLS (Row Level Security)
  * 
- * **IMPORTANTE:** Configure as políticas no Supabase SQL Editor:
+ * **IMPORTANTE:** Execute o arquivo `supabase/storage_policies.sql` no Supabase SQL Editor.
  * 
- * ```sql
- * -- Permitir usuários autenticados fazerem upload apenas em suas próprias pastas
- * CREATE POLICY "Users can upload their own avatars"
- * ON storage.objects FOR INSERT
- * TO authenticated
- * WITH CHECK (
- *   bucket_id = 'avatars' AND
- *   (storage.foldername(name))[1] = auth.uid()::text
- * );
+ * As políticas configuradas permitem:
+ * - ✅ Qualquer usuário autenticado pode fazer upload no bucket avatars
+ * - ✅ Qualquer usuário autenticado pode atualizar arquivos no bucket avatars
+ * - ✅ Qualquer usuário autenticado pode deletar arquivos no bucket avatars
+ * - ✅ Leitura pública (qualquer pessoa pode visualizar avatares)
  * 
- * -- Permitir usuários autenticados atualizarem suas próprias imagens
- * CREATE POLICY "Users can update their own avatars"
- * ON storage.objects FOR UPDATE
- * TO authenticated
- * USING (
- *   bucket_id = 'avatars' AND
- *   (storage.foldername(name))[1] = auth.uid()::text
- * );
+ * **Arquivo SQL:** `supabase/storage_policies.sql`
  * 
- * -- Permitir leitura pública (para exibir avatares)
- * CREATE POLICY "Public can read avatars"
- * ON storage.objects FOR SELECT
- * TO public
- * USING (bucket_id = 'avatars');
- * 
- * -- Permitir usuários deletarem suas próprias imagens
- * CREATE POLICY "Users can delete their own avatars"
- * ON storage.objects FOR DELETE
- * TO authenticated
- * USING (
- *   bucket_id = 'avatars' AND
- *   (storage.foldername(name))[1] = auth.uid()::text
- * );
- * ```
+ * Execute no Supabase SQL Editor após criar o bucket 'avatars'.
  * 
  * ### 3. Estrutura de Pastas
  * O upload cria automaticamente a estrutura:
