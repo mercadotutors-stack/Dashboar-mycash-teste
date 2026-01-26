@@ -3,6 +3,7 @@ import { NAVIGATION_ITEMS } from '../../../constants'
 import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
+import { ModalWrapper } from '../../ui/ModalWrapper'
 import { useFinance } from '../../../context/FinanceContext'
 
 interface SidebarProps {
@@ -13,7 +14,7 @@ interface SidebarProps {
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
   const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useFinance()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [newName, setNewName] = useState('')
   const [newType, setNewType] = useState<'family' | 'company' | 'other'>('family')
   const [isSaving, setIsSaving] = useState(false)
@@ -44,7 +45,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
       setIsSaving(true)
       const id = await createWorkspace({ name: newName.trim(), type: newType })
       setActiveWorkspace(id)
-      setIsCreating(false)
+      setShowCreateModal(false)
       setNewName('')
       setNewType('family')
       setIsDropdownOpen(false)
@@ -121,13 +122,13 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsDropdownOpen(true)
-                    setIsCreating(true)
+                    setIsDropdownOpen(false)
+                    setShowCreateModal(true)
                   }}
                   className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB] transition flex items-center gap-1"
                 >
                   <Icon name="add" className="w-4 h-4" />
-                  <span>+ Novo</span>
+                  <span>Novo</span>
                 </button>
               </div>
 
@@ -172,7 +173,6 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                               onClick={() => {
                                 setActiveWorkspace(ws.id)
                                 setIsDropdownOpen(false)
-                                setIsCreating(false)
                               }}
                               className={`
                                 w-full px-3 py-2.5 flex items-center justify-between gap-2 rounded-lg transition
@@ -199,55 +199,17 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
 
                     {/* Criar novo */}
                     <div className="border-t border-border">
-                      {!isCreating ? (
-                        <button
-                          type="button"
-                          onClick={() => setIsCreating(true)}
-                          className="w-full px-3 py-3 flex items-center gap-2 text-[13px] font-semibold text-[#111827] hover:bg-[#F9FAFB] transition"
-                        >
-                          <Icon name="add" className="w-4 h-4" />
-                          <span>Criar novo workspace</span>
-                        </button>
-                      ) : (
-                        <div className="flex flex-col gap-2 px-3 py-3">
-                          <input
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            placeholder="Nome do workspace"
-                            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                          />
-                          <select
-                            value={newType}
-                            onChange={(e) => setNewType(e.target.value as 'family' | 'company' | 'other')}
-                            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
-                          >
-                            <option value="family">Família</option>
-                            <option value="company">Empresa</option>
-                            <option value="other">Outro</option>
-                          </select>
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsCreating(false)
-                                setNewName('')
-                                setNewType('family')
-                              }}
-                              className="text-sm text-text-secondary hover:text-text-primary transition"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleCreateWorkspace}
-                              disabled={isSaving || !newName.trim()}
-                              className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-3 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                              {isSaving ? 'Salvando...' : 'Salvar'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDropdownOpen(false)
+                          setShowCreateModal(true)
+                        }}
+                        className="w-full px-3 py-3 flex items-center gap-2 text-[13px] font-semibold text-[#111827] hover:bg-[#F9FAFB] transition"
+                      >
+                        <Icon name="add" className="w-4 h-4" />
+                        <span>Criar novo workspace</span>
+                      </button>
                     </div>
                   </div>
                 ) : null}
@@ -278,6 +240,87 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           <UserProfile isExpanded={isExpanded} />
         </div>
       </div>
+
+      {/* Modal de criação de workspace em tela cheia */}
+      <ModalWrapper
+        open={showCreateModal}
+        onClose={() => {
+          if (isSaving) return
+          setShowCreateModal(false)
+          setNewName('')
+          setNewType('family')
+        }}
+        className="items-start justify-center"
+      >
+        <div className="w-full h-full bg-white overflow-auto px-4 py-6 sm:px-8 sm:py-10 flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <h2 className="text-heading-lg font-semibold text-text-primary">Novo workspace</h2>
+              <p className="text-sm text-text-secondary">Organize dados por família, empresa ou projetos.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (isSaving) return
+                setShowCreateModal(false)
+                setNewName('')
+                setNewType('family')
+              }}
+              className="text-sm text-text-secondary hover:text-text-primary transition"
+            >
+              Fechar
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-text-primary">Nome do workspace</span>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Família Torso"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-text-primary">Tipo</span>
+              <select
+                value={newType}
+                onChange={(e) => setNewType(e.target.value as 'family' | 'company' | 'other')}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="family">Família</option>
+                <option value="company">Empresa</option>
+                <option value="other">Outro</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (isSaving) return
+                setShowCreateModal(false)
+                setNewName('')
+                setNewType('family')
+              }}
+              className="text-sm text-text-secondary hover:text-text-primary transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateWorkspace}
+              disabled={isSaving || !newName.trim()}
+              className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Criando...' : 'Criar workspace'}
+            </button>
+          </div>
+        </div>
+      </ModalWrapper>
     </aside>
   )
 }
