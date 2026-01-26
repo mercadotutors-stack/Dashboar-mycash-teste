@@ -37,8 +37,33 @@ const themeStyles: Record<
   },
 }
 
+// Calcula o intervalo da próxima fatura a vencer (não a atual que já foi paga)
+// A lógica considera que todo dia de fechamento (ex: dia 10) a fatura muda
+const getNextBillRange = (closingDay: number, reference = new Date()) => {
+  const today = new Date(reference)
+  const day = today.getDate()
+  const close = Math.min(Math.max(closingDay || 1, 1), 28)
+
+  let start: Date
+  let end: Date
+
+  if (day <= close) {
+    // Ainda não fechou este mês, próxima fatura fecha no closingDay deste mês
+    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
+    end = new Date(today.getFullYear(), today.getMonth() + 1, close)
+  } else {
+    // Já fechou este mês, próxima fatura fecha no closingDay do próximo mês
+    start = new Date(today.getFullYear(), today.getMonth() + 1, close + 1)
+    end = new Date(today.getFullYear(), today.getMonth() + 2, close)
+  }
+
+  start.setHours(0, 0, 0, 0)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
 export function CreditCardsWidget() {
-  const { creditCards, bankAccounts } = useFinance()
+  const { creditCards, bankAccounts, transactions } = useFinance()
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
@@ -126,15 +151,27 @@ export function CreditCardsWidget() {
             if (item.type === 'card') {
               const card = item
               const style = themeStyles[(card.theme as Theme) || 'white'] || themeStyles.white
-              const usage = Math.round((card.currentBill / card.limit) * 100)
-              const hasBill = card.currentBill > 0
-              const currentMonth = format(new Date(), 'MMM', { locale: ptBR })
+              
+              // Calcula a próxima fatura a vencer
+              const { start, end } = getNextBillRange(card.closingDay ?? 10)
+              const nextBillTransactions = transactions.filter(
+                (tx) =>
+                  tx.accountId === card.id &&
+                  tx.type === 'expense' &&
+                  tx.status === 'pending' &&
+                  tx.date.getTime() >= start.getTime() &&
+                  tx.date.getTime() <= end.getTime()
+              )
+              const nextBillAmount = nextBillTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0)
+              
+              const usage = Math.round((nextBillAmount / card.limit) * 100)
+              const nextBillMonth = format(end, 'MMM', { locale: ptBR })
               
               return (
                 <div
                   key={card.id}
                   className="
-                    relative flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
+                    flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
                     px-5 py-4 transition-card
                     hover:-translate-y-1 hover:shadow-md cursor-pointer
                     animate-slide-up
@@ -142,13 +179,6 @@ export function CreditCardsWidget() {
                   style={{ animationDelay: `${idx * 60}ms` }}
                   onClick={() => handleDetail(card.id, 'card')}
                 >
-                  {/* Mês no canto superior direito quando não tem fatura */}
-                  {!hasBill && (
-                    <div className="absolute top-2 right-2 text-xs text-text-secondary font-medium">
-                      {currentMonth}
-                    </div>
-                  )}
-                  
                   <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${style.blockClass}`}>
                     <Icon name="credit-card" className={`w-6 h-6 ${style.iconClass}`} />
                   </div>
@@ -156,9 +186,11 @@ export function CreditCardsWidget() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-text-secondary truncate">{card.name}</div>
                     <div className="text-2xl font-bold text-text-primary leading-snug">
-                      {formatCurrency(card.currentBill)}
+                      {formatCurrency(nextBillAmount)}
                     </div>
-                    <div className="text-sm text-text-secondary">•••• {card.lastDigits || '****'}</div>
+                    <div className="text-sm text-text-secondary">
+                      •••• {card.lastDigits || '****'} - {nextBillMonth}
+                    </div>
                   </div>
 
                   <div
