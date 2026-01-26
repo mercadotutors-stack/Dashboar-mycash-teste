@@ -102,11 +102,14 @@ create table if not exists transactions (
   amount numeric(12,2) not null,
   description text not null,
   date date not null,
+  purchase_date date,
+  first_installment_date date,
   category_id uuid references categories(id) on delete set null,
   account_id uuid references accounts(id) on delete set null,
   member_id uuid references family_members(id) on delete set null,
   installment_number int,
   total_installments int not null default 1,
+  paid_installments int not null default 0,
   parent_transaction_id uuid references transactions(id) on delete cascade,
   is_recurring boolean not null default false,
   recurring_transaction_id uuid references recurring_transactions(id) on delete set null,
@@ -169,11 +172,14 @@ create or replace function create_transaction(
   p_amount numeric,
   p_description text,
   p_date date,
+  p_purchase_date date,
+  p_first_installment_date date,
   p_category_id uuid,
   p_account_id uuid,
   p_member_id uuid,
   p_total_installments int,
   p_installment_number int,
+  p_paid_installments int,
   p_is_recurring boolean,
   p_recurring_transaction_id uuid,
   p_status transaction_status,
@@ -186,11 +192,13 @@ begin
   end if;
 
   insert into transactions(
-    id, user_id, type, amount, description, date, category_id, account_id, member_id,
-    total_installments, installment_number, is_recurring, recurring_transaction_id, status, notes
+    id, user_id, type, amount, description, date, purchase_date, first_installment_date,
+    category_id, account_id, member_id, total_installments, installment_number, paid_installments,
+    is_recurring, recurring_transaction_id, status, notes
   ) values (
-    v_id, p_user_id, p_type, p_amount, p_description, p_date, p_category_id, p_account_id, p_member_id,
-    coalesce(p_total_installments,1), p_installment_number, coalesce(p_is_recurring,false),
+    v_id, p_user_id, p_type, p_amount, p_description, p_date, p_purchase_date, p_first_installment_date,
+    p_category_id, p_account_id, p_member_id, coalesce(p_total_installments,1), p_installment_number, coalesce(p_paid_installments,0),
+    coalesce(p_is_recurring,false),
     p_recurring_transaction_id, coalesce(p_status,'COMPLETED'), p_notes
   );
   return v_id;

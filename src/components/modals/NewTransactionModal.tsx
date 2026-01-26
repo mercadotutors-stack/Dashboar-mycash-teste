@@ -21,7 +21,10 @@ type FormState = {
   memberId: string | null
   accountId: string
   installments: number
+  paidInstallments: number
   isRecurring: boolean
+  purchaseDate: string
+  firstInstallmentDate: string
   newCategory: string
   showNewCategory: boolean
 }
@@ -34,7 +37,10 @@ const defaultState: FormState = {
   memberId: null,
   accountId: '',
   installments: 1,
+  paidInstallments: 0,
   isRecurring: false,
+  purchaseDate: new Date().toISOString().slice(0, 10),
+  firstInstallmentDate: new Date().toISOString().slice(0, 10),
   newCategory: '',
   showNewCategory: false,
 }
@@ -119,6 +125,20 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
     if (showInstallments && (state.installments < 1 || state.installments > 12)) {
       nextErrors.installments = 'Escolha entre 1x e 12x.'
     }
+    if (showInstallments) {
+      if (state.paidInstallments < 0) {
+        nextErrors.paidInstallments = 'Parcelas pagas não pode ser negativo.'
+      }
+      if (state.paidInstallments > state.installments) {
+        nextErrors.paidInstallments = 'Parcelas pagas não pode exceder o total.'
+      }
+      if (!state.purchaseDate) {
+        nextErrors.purchaseDate = 'Informe a data da compra.'
+      }
+      if (!state.firstInstallmentDate) {
+        nextErrors.firstInstallmentDate = 'Informe a data da 1ª parcela.'
+      }
+    }
 
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
@@ -133,9 +153,13 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
         amount: state.amount,
         description: state.description.trim(),
         category: state.category,
-        date: new Date(),
+        date: state.purchaseDate ? new Date(state.purchaseDate) : new Date(),
+        purchaseDate: state.purchaseDate ? new Date(state.purchaseDate) : new Date(),
+        firstInstallmentDate: state.firstInstallmentDate ? new Date(state.firstInstallmentDate) : new Date(),
         accountId: state.accountId,
         memberId: state.memberId,
+        totalInstallments: showInstallments ? state.installments : 1,
+        paidInstallments: showInstallments ? state.paidInstallments : 0,
         installments: showInstallments ? state.installments : 1,
         currentInstallment: 1,
         status: 'completed',
@@ -363,26 +387,74 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
 
           {/* Parcelamento */}
           {showInstallments ? (
-            <div className="flex flex-col gap-2 animate-fade-in">
-              <label className="text-sm font-semibold text-text-primary">Parcelamento</label>
-              <select
-                value={state.installments}
-                onChange={(e) => handleChange('installments', Number(e.target.value))}
-                disabled={state.isRecurring}
-                className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
-                  errors.installments ? 'border-red-500' : 'border-border'
-                } ${state.isRecurring ? 'opacity-60 cursor-not-allowed' : ''}`}
-              >
-                {Array.from({ length: 12 }, (_, idx) => idx + 1).map((n) => (
-                  <option key={n} value={n}>
-                    {n === 1 ? 'À vista (1x)' : `${n}x`}
-                  </option>
-                ))}
-              </select>
-              {state.isRecurring ? (
-                <p className="text-sm italic text-text-secondary">Parcelamento desabilitado para despesas recorrentes</p>
-              ) : null}
-              {errors.installments ? <p className="text-sm text-red-600">{errors.installments}</p> : null}
+            <div className="flex flex-col gap-3 animate-fade-in">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-text-primary">Parcelamento</label>
+                <select
+                  value={state.installments}
+                  onChange={(e) => handleChange('installments', Number(e.target.value))}
+                  disabled={state.isRecurring}
+                  className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                    errors.installments ? 'border-red-500' : 'border-border'
+                  } ${state.isRecurring ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {Array.from({ length: 12 }, (_, idx) => idx + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n === 1 ? 'À vista (1x)' : `${n}x`}
+                    </option>
+                  ))}
+                </select>
+                {state.isRecurring ? (
+                  <p className="text-sm italic text-text-secondary">Parcelamento desabilitado para despesas recorrentes</p>
+                ) : null}
+                {errors.installments ? <p className="text-sm text-red-600">{errors.installments}</p> : null}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-text-primary">Parcelas já pagas</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={state.installments}
+                    value={state.paidInstallments}
+                    onChange={(e) => handleChange('paidInstallments', Number(e.target.value))}
+                    className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                      errors.paidInstallments ? 'border-red-500' : 'border-border'
+                    }`}
+                  />
+                  {errors.paidInstallments ? <p className="text-sm text-red-600">{errors.paidInstallments}</p> : null}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-text-primary">Data da compra</label>
+                  <input
+                    type="date"
+                    value={state.purchaseDate}
+                    onChange={(e) => handleChange('purchaseDate', e.target.value)}
+                    className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                      errors.purchaseDate ? 'border-red-500' : 'border-border'
+                    }`}
+                  />
+                  {errors.purchaseDate ? <p className="text-sm text-red-600">{errors.purchaseDate}</p> : null}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-text-primary">Data da 1ª parcela</label>
+                  <input
+                    type="date"
+                    value={state.firstInstallmentDate}
+                    onChange={(e) => handleChange('firstInstallmentDate', e.target.value)}
+                    className={`h-14 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                      errors.firstInstallmentDate ? 'border-red-500' : 'border-border'
+                    }`}
+                  />
+                  {errors.firstInstallmentDate ? (
+                    <p className="text-sm text-red-600">{errors.firstInstallmentDate}</p>
+                  ) : null}
+                </div>
+              </div>
             </div>
           ) : null}
 

@@ -227,8 +227,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             date: toDate(t.date),
             accountId: t.account_id ?? '',
             memberId: t.member_id ?? null,
-            installments: t.total_installments ?? 1,
-            currentInstallment: t.installment_number ?? 1,
+            installments: t.total_installments ?? 1, // legado
+            currentInstallment: t.installment_number ?? 1, // legado
+            totalInstallments: t.total_installments ?? 1,
+            paidInstallments: t.paid_installments ?? 0,
+            purchaseDate: t.purchase_date ? toDate(t.purchase_date) : undefined,
+            firstInstallmentDate: t.first_installment_date ? toDate(t.first_installment_date) : undefined,
+            parentTransactionId: t.parent_transaction_id ?? null,
             status: mapStatus(t.status),
             isRecurring: Boolean(t.is_recurring),
             isPaid: mapStatus(t.status) === 'completed',
@@ -303,33 +308,97 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
         }
       }
-      const payload = {
-        user_id: userId,
-        type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
-        amount: input.amount,
-        description: input.description,
-        date: input.date.toISOString().slice(0, 10),
-        category_id: null,
-        account_id: input.accountId || null,
-        member_id: input.memberId,
-        total_installments: input.installments ?? 1,
-        installment_number: input.currentInstallment ?? 1,
-        is_recurring: input.isRecurring ?? false,
-        status: input.status === 'pending' ? 'PENDING' : 'COMPLETED',
-        notes: null,
+      const totalInstallments = input.totalInstallments ?? input.installments ?? 1
+      const paidInstallments = Math.min(Math.max(input.paidInstallments ?? 0, 0), totalInstallments)
+      const hasInstallments = totalInstallments > 1
+      const installmentsToCreate = hasInstallments ? totalInstallments - paidInstallments : 1
+
+      if (installmentsToCreate <= 0) {
+        throw new Error('Número de parcelas pagas não pode ser maior ou igual ao total de parcelas.')
       }
-      const { data, error } = await supabase.from('transactions').insert(payload).select('*').single()
+
+      const purchaseDate = input.purchaseDate ?? input.date ?? new Date()
+      const firstInstallmentDate = input.firstInstallmentDate ?? input.date ?? new Date()
+      const parentTransactionId =
+        input.parentTransactionId ??
+        (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`)
+
+      const addMonths = (date: Date, months: number) => {
+        const d = new Date(date)
+        const day = d.getDate()
+        d.setMonth(d.getMonth() + months)
+        if (d.getDate() !== day) {
+          d.setDate(0)
+        }
+        return d
+      }
+
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+      const baseStart = addMonths(firstInstallmentDate, paidInstallments)
+      const firstFutureDate =
+        baseStart < startOfToday
+          ? addMonths(new Date(startOfToday.getFullYear(), startOfToday.getMonth(), firstInstallmentDate.getDate()), 0)
+          : baseStart
+
+      const installmentValueCents = Math.round((input.amount / totalInstallments) * 100)
+
+      const payloads = Array.from({ length: installmentsToCreate }, (_, idx) => {
+        const globalIndex = paidInstallments + idx
+        const valueCents = installmentValueCents
+
+        const installmentDate = addMonths(firstFutureDate, idx)
+
+        return {
+          user_id: userId,
+          type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
+          amount: valueCents / 100,
+          description: input.description,
+          date: installmentDate.toISOString().slice(0, 10),
+          purchase_date: purchaseDate.toISOString().slice(0, 10),
+          first_installment_date: firstInstallmentDate.toISOString().slice(0, 10),
+          category_id: null,
+          account_id: input.accountId || null,
+          member_id: input.memberId,
+          total_installments: totalInstallments,
+          installment_number: globalIndex + 1,
+          paid_installments: paidInstallments,
+          parent_transaction_id: parentTransactionId,
+          is_recurring: input.isRecurring ?? false,
+          status: 'PENDING',
+          notes: null,
+        }
+      })
+
+      const { data, error } = await supabase.from('transactions').insert(payloads).select('*')
       if (error) throw error
+
       const categoryName = input.category ?? 'Sem categoria'
-      const newTx: Transaction = {
-        id: data.id,
-        ...input,
+      const mapped = data.map((row) => ({
+        id: row.id,
+        type: mapType(row.type),
+        amount: Number(row.amount ?? 0),
+        description: row.description,
         category: categoryName,
-        createdAt: toDate(data.created_at),
-        updatedAt: toDate(data.updated_at),
-      }
-      setTransactions((prev) => [...prev, newTx])
-      return data.id as string
+        date: toDate(row.date),
+        accountId: row.account_id ?? '',
+        memberId: row.member_id ?? null,
+        installments: row.total_installments ?? 1,
+        currentInstallment: row.installment_number ?? 1,
+        totalInstallments: row.total_installments ?? 1,
+        paidInstallments: row.paid_installments ?? 0,
+        purchaseDate: row.purchase_date ? toDate(row.purchase_date) : undefined,
+        firstInstallmentDate: row.first_installment_date ? toDate(row.first_installment_date) : undefined,
+        parentTransactionId: row.parent_transaction_id ?? parentTransactionId ?? null,
+        status: mapStatus(row.status),
+        isRecurring: Boolean(row.is_recurring),
+        isPaid: mapStatus(row.status) === 'completed',
+        createdAt: toDate(row.created_at),
+        updatedAt: toDate(row.updated_at),
+      }))
+
+      setTransactions((prev) => [...prev, ...mapped])
+      return mapped[0]?.id as string
     },
     [userId],
   )

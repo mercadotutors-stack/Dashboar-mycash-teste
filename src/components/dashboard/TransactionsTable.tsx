@@ -247,10 +247,12 @@ export function TransactionsTable() {
                     <span className="text-sm text-text-secondary flex-shrink-0">Conta/Cartão</span>
                     <span className="text-sm text-text-primary font-medium truncate text-right max-w-[70%]">{accountName}</span>
                   </div>
-                  {tx.installments && tx.installments > 1 && (
+                  {tx.totalInstallments && tx.totalInstallments > 1 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-text-secondary">Parcelas</span>
-                      <span className="text-sm text-text-primary font-medium">{tx.installments}x</span>
+                      <span className="text-sm text-text-primary font-medium">
+                        {`${tx.currentInstallment ?? 1}/${tx.totalInstallments}`}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -370,10 +372,12 @@ export function TransactionsTable() {
                       <span className="text-xs text-text-secondary">Conta/Cartão</span>
                       <span className="text-sm text-text-primary font-medium truncate">{accountName}</span>
                     </div>
-                    {tx.installments && tx.installments > 1 ? (
+                    {tx.totalInstallments && tx.totalInstallments > 1 ? (
                       <div className="flex flex-col gap-1">
                         <span className="text-xs text-text-secondary">Parcelas</span>
-                        <span className="text-sm text-text-primary font-medium">{tx.installments}x</span>
+                        <span className="text-sm text-text-primary font-medium">
+                          {`${tx.currentInstallment ?? 1}/${tx.totalInstallments}`}
+                        </span>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-1">
@@ -474,7 +478,9 @@ export function TransactionsTable() {
                     <div className="px-2 text-text-secondary text-body">{accountName}</div>
 
                     <div className="px-2 text-text-secondary text-body">
-                      {tx.installments && tx.installments > 1 ? `${tx.installments}x` : '-'}
+                      {tx.totalInstallments && tx.totalInstallments > 1
+                        ? `${tx.currentInstallment ?? 1}/${tx.totalInstallments}`
+                        : '-'}
                     </div>
 
                     <div className="px-2 text-right font-semibold text-body">

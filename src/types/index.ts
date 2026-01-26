@@ -25,14 +25,19 @@ export type CardTheme = 'black' | 'lime' | 'white';
 export interface Transaction {
   id: string;
   type: TransactionType;
-  amount: number;
+  amount: number; // Valor desta parcela (para parcelado) ou total (à vista)
   description: string;
   category: string;
   date: Date;
   accountId: string; // ID da conta bancária ou cartão de crédito
   memberId: string | null; // ID do membro da família responsável (null = geral)
-  installments?: number; // Número de parcelas (1 = à vista)
-  currentInstallment?: number; // Parcela atual (1/3, 2/3, etc)
+  installments?: number; // Número de parcelas (1 = à vista) - legado
+  currentInstallment?: number; // Parcela atual (1/3, 2/3, etc) - legado
+  totalInstallments?: number; // Total de parcelas da compra
+  paidInstallments?: number; // Quantidade de parcelas já pagas
+  purchaseDate?: Date; // Data da compra original
+  firstInstallmentDate?: Date; // Data da 1ª parcela
+  parentTransactionId?: string | null; // Agrupador das parcelas
   status: PaymentStatus;
   isRecurring: boolean; // Indica se é despesa recorrente
   isPaid: boolean; // Indica se foi paga (para despesas)
