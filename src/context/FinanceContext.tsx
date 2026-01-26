@@ -13,6 +13,7 @@ type CategoryPercentage = Array<{ category: string; percentage: number }>
 type Category = { id: string; name: string; type: 'income' | 'expense' }
 
 interface FinanceContextValue {
+  userId: string | null // ID do usuário na tabela users (não auth.users)
   transactions: Transaction[]
   creditCards: CreditCard[]
   bankAccounts: BankAccount[]
@@ -384,23 +385,34 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
         }
       }
+      const insertPayload = {
+        user_id: userId,
+        name: input.name,
+        role: input.role,
+        email: input.email ?? null,
+        avatar_url: input.avatarUrl && input.avatarUrl.trim() ? input.avatarUrl.trim() : null,
+        monthly_income: input.monthlyIncome ?? 0,
+      }
+      
+      console.log('Criando novo membro:', insertPayload)
+
       const { data, error } = await supabase
         .from('family_members')
-        .insert({
-          user_id: userId,
-          name: input.name,
-          role: input.role,
-          avatar_url: input.avatarUrl ?? null,
-          monthly_income: input.monthlyIncome ?? 0,
-        })
+        .insert(insertPayload)
         .select('*')
         .single()
-      if (error) throw error
+      
+      if (error) {
+        console.error('Erro ao criar membro:', error)
+        throw error
+      }
+      
+      console.log('Membro criado com sucesso:', data)
       const member: FamilyMember = {
         id: data.id,
         name: data.name,
         role: data.role,
-        email: '',
+        email: data.email ?? '',
         avatarUrl: data.avatar_url ?? undefined,
         monthlyIncome: Number(data.monthly_income ?? 0),
         createdAt: toDate(data.created_at),
@@ -424,8 +436,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (input.name !== undefined) payload.name = input.name
       if (input.role !== undefined) payload.role = input.role
       if (input.email !== undefined) payload.email = input.email
-      if (input.avatarUrl !== undefined) payload.avatar_url = input.avatarUrl ?? null
+      if (input.avatarUrl !== undefined) {
+        // Salva como null se for string vazia, senão salva a URL
+        payload.avatar_url = input.avatarUrl && input.avatarUrl.trim() ? input.avatarUrl.trim() : null
+      }
       if (input.monthlyIncome !== undefined) payload.monthly_income = input.monthlyIncome ?? 0
+
+      console.log('Atualizando membro:', { id, payload })
 
       const { data, error } = await supabase
         .from('family_members')
@@ -433,7 +450,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         .eq('id', id)
         .select('*')
         .single()
-      if (error) throw error
+      
+      if (error) {
+        console.error('Erro ao atualizar membro:', error)
+        throw error
+      }
+      
+      console.log('Membro atualizado com sucesso:', data)
       const member: FamilyMember = {
         id: data.id,
         name: data.name,
@@ -737,6 +760,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }, [bankAccounts, creditCards, filters.selectedMember])
 
   const value: FinanceContextValue = {
+    userId,
     transactions,
     creditCards,
     bankAccounts,

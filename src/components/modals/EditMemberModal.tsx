@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
-import { useAuth } from '../../context/AuthContext'
 import { FamilyMember } from '../../types'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
@@ -18,8 +17,7 @@ type Props = {
 const roleSuggestions = ['Pai', 'Mãe', 'Filho', 'Filha', 'Avô', 'Avó', 'Tio', 'Tia']
 
 export function EditMemberModal({ open, member, onClose }: Props) {
-  const { updateFamilyMember } = useFinance()
-  const { user } = useAuth()
+  const { updateFamilyMember, userId } = useFinance()
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [email, setEmail] = useState('')
@@ -50,8 +48,8 @@ export function EditMemberModal({ open, member, onClose }: Props) {
   }
 
   const handleFileUpload = async (file: File) => {
-    if (!user?.id) {
-      setToast('Erro: Usuário não autenticado')
+    if (!userId) {
+      setToast('Erro: Usuário não inicializado. Aguarde um momento e tente novamente.')
       setTimeout(() => setToast(null), 3000)
       return
     }
@@ -60,13 +58,13 @@ export function EditMemberModal({ open, member, onClose }: Props) {
     setUploadProgress('Fazendo upload da imagem...')
 
     try {
-      const uploadedUrl = await uploadImage(file, user.id, member?.id)
+      const uploadedUrl = await uploadImage(file, userId, member?.id)
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl)
         setUploadProgress('Upload concluído!')
         setTimeout(() => setUploadProgress(null), 2000)
       } else {
-        setToast('Erro ao fazer upload da imagem')
+        setToast('Erro ao fazer upload da imagem. Verifique o console para mais detalhes.')
         setTimeout(() => setToast(null), 3000)
       }
     } catch (err) {

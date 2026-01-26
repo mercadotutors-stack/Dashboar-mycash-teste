@@ -89,13 +89,34 @@ export async function uploadImage(
 
     if (error) {
       console.error('Erro ao fazer upload:', error)
-      // Se o erro for sobre bucket não encontrado, fornece mensagem mais clara
+      console.error('Detalhes do erro:', {
+        message: error.message,
+        name: error.name,
+        filePath,
+        userId,
+        memberId,
+      })
+      
+      // Mensagens de erro mais específicas
       if (error.message?.includes('Bucket') || error.message?.includes('not found')) {
         throw new Error(
           'Bucket "avatars" não encontrado. Crie o bucket no Supabase Storage primeiro e configure as políticas RLS conforme documentação.'
         )
       }
-      throw error
+      
+      if (error.message?.includes('new row violates row-level security') || error.message?.includes('RLS') || error.message?.includes('row-level security')) {
+        throw new Error(
+          'Erro de permissão. Verifique se as políticas RLS do bucket "avatars" foram configuradas corretamente. Execute o arquivo supabase/storage_policies.sql no Supabase SQL Editor.'
+        )
+      }
+      
+      if (error.message?.includes('permission') || error.message?.includes('forbidden') || error.message?.includes('403')) {
+        throw new Error(
+          'Acesso negado. Verifique se você está autenticado e se as políticas RLS permitem upload no bucket "avatars".'
+        )
+      }
+      
+      throw new Error(`Erro ao fazer upload: ${error.message || 'Erro desconhecido'}`)
     }
 
     // Obtém URL pública da imagem
