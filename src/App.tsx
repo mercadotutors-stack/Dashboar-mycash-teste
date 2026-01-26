@@ -12,6 +12,7 @@ import Accounts from './pages/Accounts'
 import Transactions from './pages/Transactions'
 import Profile from './pages/Profile'
 import MemberProfile from './pages/MemberProfile'
+import Workspaces from './pages/Workspaces'
 
 function App() {
   return (
@@ -22,6 +23,16 @@ function App() {
         <Route path={ROUTES.SIGNUP} element={<Signup />} />
         <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+
+        {/* Seleção de workspace (protegida) */}
+        <Route
+          path={ROUTES.WORKSPACES}
+          element={
+            <ProtectedRoute>
+              <Workspaces />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Rotas protegidas */}
         <Route
@@ -39,8 +50,8 @@ function App() {
           <Route path="/profile/:memberId" element={<MemberProfile />} />
         </Route>
 
-        {/* Redireciona rotas desconhecidas para login */}
-        <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        {/* Redireciona rotas desconhecidas para seleção de workspace */}
+        <Route path="*" element={<Navigate to={ROUTES.WORKSPACES} replace />} />
       </Routes>
     </BrowserRouter>
   )

@@ -10,6 +10,7 @@ export const ROUTES = {
   SIGNUP: '/signup',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
+  WORKSPACES: '/workspaces',
   DASHBOARD: '/',
   CARDS: '/cards',
   ACCOUNTS: '/accounts',

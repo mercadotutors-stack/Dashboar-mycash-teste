@@ -2,6 +2,7 @@ import { NAVIGATION_ITEMS } from '../../../constants'
 import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
+import { useFinance } from '../../../context/FinanceContext'
 
 interface SidebarProps {
   isExpanded: boolean
@@ -9,6 +10,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
+  const { workspaces, activeWorkspaceId, setActiveWorkspace } = useFinance()
+
   return (
     <aside
       className={`
@@ -66,6 +69,22 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
 
           {/* Navegação (32px abaixo do logo no desktop) */}
           <div className="flex flex-col gap-3 mt-8 w-full">
+            {/* Workspace Switcher no sidebar */}
+            <div className="flex items-center gap-2">
+              <Icon name="workspace_premium" className="w-5 h-5 text-text-secondary" />
+              <select
+                value={activeWorkspaceId}
+                onChange={(e) => setActiveWorkspace(e.target.value)}
+                className="h-10 rounded-lg border border-border bg-white px-3 text-sm text-text-primary outline-none w-full"
+              >
+                {workspaces.map((ws) => (
+                  <option key={ws.id} value={ws.id}>
+                    {ws.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <nav
               className={`
                 flex flex-col
