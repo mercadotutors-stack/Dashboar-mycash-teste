@@ -50,7 +50,8 @@ export function ModalWrapper({ open, onClose, children, className = '' }: ModalW
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
+      className={`fixed inset-0 z-[99999] flex ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
+      style={{ zIndex: 99999 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
@@ -60,13 +61,13 @@ export function ModalWrapper({ open, onClose, children, className = '' }: ModalW
       {/* Overlay */}
       <div
         className={`absolute inset-0 bg-black/50 ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
-        style={{ animationDuration: '200ms' }}
+        style={{ animationDuration: '200ms', zIndex: 99999 }}
       />
 
       {/* Modal */}
       <div
         className={`relative w-full h-full ${isAnimating ? 'animate-scale-in' : 'animate-scale-out'} ${className}`}
-        style={{ animationDuration: '250ms' }}
+        style={{ animationDuration: '250ms', zIndex: 100000 }}
         onClick={(e) => e.stopPropagation()}
       >
         {children}
