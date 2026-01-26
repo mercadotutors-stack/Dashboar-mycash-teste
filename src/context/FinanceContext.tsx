@@ -385,16 +385,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
         }
       }
-      const insertPayload = {
+      // Prepara payload garantindo que campos obrigatórios estão presentes
+      const insertPayload: Record<string, any> = {
         user_id: userId,
-        name: input.name,
-        role: input.role,
-        email: input.email ?? null,
-        avatar_url: input.avatarUrl && input.avatarUrl.trim() ? input.avatarUrl.trim() : null,
-        monthly_income: input.monthlyIncome ?? 0,
+        name: input.name.trim(),
+        role: input.role.trim(),
+        monthly_income: typeof input.monthlyIncome === 'number' ? input.monthlyIncome : (Number(input.monthlyIncome) || 0),
+      }
+      
+      // Campos opcionais - só adiciona se tiver valor
+      if (input.email && input.email.trim()) {
+        insertPayload.email = input.email.trim()
+      }
+      
+      if (input.avatarUrl && input.avatarUrl.trim()) {
+        insertPayload.avatar_url = input.avatarUrl.trim()
       }
       
       console.log('Criando novo membro:', insertPayload)
+      console.log('Tipos dos valores:', {
+        user_id: typeof insertPayload.user_id,
+        name: typeof insertPayload.name,
+        role: typeof insertPayload.role,
+        monthly_income: typeof insertPayload.monthly_income,
+        email: insertPayload.email ? typeof insertPayload.email : 'undefined',
+        avatar_url: insertPayload.avatar_url ? typeof insertPayload.avatar_url : 'undefined',
+      })
 
       const { data, error } = await supabase
         .from('family_members')
@@ -404,7 +420,26 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error('Erro ao criar membro:', error)
-        throw error
+        console.error('Payload enviado:', insertPayload)
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        })
+        
+        // Mensagem de erro mais amigável
+        if (error.code === '23503') {
+          throw new Error('Erro: Usuário não encontrado. Verifique se você está autenticado corretamente.')
+        }
+        if (error.code === '23502') {
+          throw new Error('Erro: Campo obrigatório faltando. Verifique se nome e função foram preenchidos.')
+        }
+        if (error.message?.includes('violates')) {
+          throw new Error(`Erro de validação: ${error.message}`)
+        }
+        
+        throw new Error(`Erro ao criar membro: ${error.message || 'Erro desconhecido'}`)
       }
       
       console.log('Membro criado com sucesso:', data)
@@ -433,14 +468,25 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         }
       }
       const payload: Record<string, any> = {}
-      if (input.name !== undefined) payload.name = input.name
-      if (input.role !== undefined) payload.role = input.role
-      if (input.email !== undefined) payload.email = input.email
+      
+      // Campos obrigatórios
+      if (input.name !== undefined) payload.name = input.name.trim()
+      if (input.role !== undefined) payload.role = input.role.trim()
+      if (input.monthlyIncome !== undefined) {
+        payload.monthly_income = typeof input.monthlyIncome === 'number' 
+          ? input.monthlyIncome 
+          : (Number(input.monthlyIncome) || 0)
+      }
+      
+      // Campos opcionais - só atualiza se fornecido
+      if (input.email !== undefined) {
+        payload.email = input.email && input.email.trim() ? input.email.trim() : null
+      }
+      
       if (input.avatarUrl !== undefined) {
         // Salva como null se for string vazia, senão salva a URL
         payload.avatar_url = input.avatarUrl && input.avatarUrl.trim() ? input.avatarUrl.trim() : null
       }
-      if (input.monthlyIncome !== undefined) payload.monthly_income = input.monthlyIncome ?? 0
 
       console.log('Atualizando membro:', { id, payload })
 
@@ -453,7 +499,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error('Erro ao atualizar membro:', error)
-        throw error
+        console.error('Payload enviado:', payload)
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        })
+        
+        // Mensagem de erro mais amigável
+        if (error.code === '23502') {
+          throw new Error('Erro: Campo obrigatório faltando. Verifique se nome e função foram preenchidos.')
+        }
+        if (error.message?.includes('violates')) {
+          throw new Error(`Erro de validação: ${error.message}`)
+        }
+        
+        throw new Error(`Erro ao atualizar membro: ${error.message || 'Erro desconhecido'}`)
       }
       
       console.log('Membro atualizado com sucesso:', data)

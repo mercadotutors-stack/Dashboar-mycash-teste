@@ -26,6 +26,7 @@ create table if not exists family_members (
   user_id uuid not null references users(id) on delete cascade,
   name text not null,
   role text not null,
+  email text,
   avatar_url text,
   monthly_income numeric(12,2) not null default 0,
   color text not null default '#3247FF',
