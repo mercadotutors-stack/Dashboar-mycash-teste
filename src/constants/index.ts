@@ -11,6 +11,7 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   WORKSPACES: '/workspaces',
+  CREATE_WORKSPACE: '/workspaces/new',
   DASHBOARD: '/',
   CARDS: '/cards',
   ACCOUNTS: '/accounts',

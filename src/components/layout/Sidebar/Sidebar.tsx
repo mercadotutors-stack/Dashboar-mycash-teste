@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NAVIGATION_ITEMS } from '../../../constants'
+import { useNavigate } from 'react-router-dom'
+import { NAVIGATION_ITEMS, ROUTES } from '../../../constants'
 import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
 import { useFinance } from '../../../context/FinanceContext'
-import { ModalWrapper } from '../../ui/ModalWrapper'
 
 interface SidebarProps {
   isExpanded: boolean
@@ -12,13 +12,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
-  const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace, updateWorkspace } = useFinance()
+  const { workspaces, activeWorkspaceId, setActiveWorkspace, updateWorkspace } = useFinance()
+  const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState<'family' | 'company' | 'other'>('family')
-  const [newSubtitle, setNewSubtitle] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
   const [editingName, setEditingName] = useState<string | null>(null)
   const [editingType, setEditingType] = useState<string | null>(null)
   const [tempName, setTempName] = useState('')
@@ -45,25 +41,6 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
   useEffect(() => {
       setIsDropdownOpen(false)
   }, [activeWorkspaceId])
-
-  const handleCreateWorkspace = async () => {
-    if (!newName.trim()) return
-    try {
-      setIsSaving(true)
-      const id = await createWorkspace({ name: newName.trim(), type: newType, subtitle: newSubtitle.trim() || undefined })
-      setActiveWorkspace(id)
-      setShowCreateModal(false)
-      setNewName('')
-      setNewType('family')
-      setNewSubtitle('')
-      setIsDropdownOpen(false)
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao criar workspace')
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   const handleStartEditName = (workspaceId: string) => {
     const ws = workspaces.find((w) => w.id === workspaceId)
@@ -171,7 +148,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                   type="button"
                   onClick={() => {
                     setIsDropdownOpen(false)
-                    setShowCreateModal(true)
+                    navigate(ROUTES.CREATE_WORKSPACE)
                   }}
                   className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB] transition flex items-center gap-1"
                 >
@@ -375,7 +352,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                         type="button"
                         onClick={() => {
                           setIsDropdownOpen(false)
-                          setShowCreateModal(true)
+                          navigate(ROUTES.CREATE_WORKSPACE)
                         }}
                         className="w-full px-3 py-3 flex items-center gap-2 text-[13px] font-semibold text-[#111827] hover:bg-[#F9FAFB] transition"
                       >
@@ -412,108 +389,6 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           <UserProfile isExpanded={isExpanded} />
         </div>
       </div>
-
-      {/* Modal de criação de workspace (padrão igual transação) */}
-      <ModalWrapper
-        open={showCreateModal}
-        onClose={() => {
-          if (isSaving) return
-          setShowCreateModal(false)
-          setNewName('')
-          setNewType('family')
-          setNewSubtitle('')
-        }}
-        className="w-full h-full bg-white flex flex-col"
-      >
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-text-primary">
-              <Icon name="workspace_premium" className="w-7 h-7" />
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-heading-xl font-bold text-text-primary">Novo workspace</h2>
-              <p className="text-text-secondary text-sm">Organize dados por família, empresa ou projetos.</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (isSaving) return
-              setShowCreateModal(false)
-              setNewName('')
-              setNewType('family')
-              setNewSubtitle('')
-            }}
-            className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
-            aria-label="Fechar modal"
-          >
-            <Icon name="close" className="w-6 h-6 text-text-primary" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
-          <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-text-primary">Nome do workspace</span>
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Família Torso"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-text-primary">Legenda</span>
-                <input
-                  value={newSubtitle}
-                  onChange={(e) => setNewSubtitle(e.target.value)}
-                  placeholder="Workspace padrão"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-text-primary">Tipo</span>
-                <select
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value as 'family' | 'company' | 'other')}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="family">Família</option>
-                  <option value="company">Empresa</option>
-                  <option value="other">Outro</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <footer className="sticky bottom-0 border-t border-border bg-white px-6 py-4 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (isSaving) return
-              setShowCreateModal(false)
-              setNewName('')
-              setNewType('family')
-              setNewSubtitle('')
-            }}
-            className="text-sm text-text-secondary hover:text-text-primary transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleCreateWorkspace}
-            disabled={isSaving || !newName.trim()}
-            className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSaving ? 'Criando...' : 'Criar workspace'}
-          </button>
-        </footer>
-      </ModalWrapper>
     </aside>
   )
 }

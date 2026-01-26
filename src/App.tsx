@@ -13,6 +13,7 @@ import Transactions from './pages/Transactions'
 import Profile from './pages/Profile'
 import MemberProfile from './pages/MemberProfile'
 import Workspaces from './pages/Workspaces'
+import CreateWorkspace from './pages/CreateWorkspace'
 
 function App() {
   return (
@@ -30,6 +31,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Workspaces />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.CREATE_WORKSPACE}
+          element={
+            <ProtectedRoute>
+              <CreateWorkspace />
             </ProtectedRoute>
           }
         />
