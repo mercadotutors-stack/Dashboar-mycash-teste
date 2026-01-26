@@ -168,7 +168,10 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
       })
       setToast('Transação registrada com sucesso!')
       setTimeout(() => setToast(null), 2000)
-      onClose()
+      // Pequeno delay para garantir que o estado seja atualizado antes de fechar
+      setTimeout(() => {
+        onClose()
+      }, 100)
     } catch (err) {
       console.error('Erro ao adicionar transação:', err)
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar transação. Verifique o console.'
