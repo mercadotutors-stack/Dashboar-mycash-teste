@@ -12,27 +12,108 @@ type Props = {
   onClose: () => void
   onAddExpense?: (cardId: string) => void
   onEdit?: (cardId: string) => void
-  onViewStatement?: (cardId: string) => void
 }
 
-export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, onViewStatement }: Props) {
+type MonthTab = {
+  label: string
+  monthKey: string
+  start: Date
+  end: Date
+  total: number
+}
+
+// Helper para obter range do ciclo
+const getCycleRangeHelper = (closingDay: number, reference: Date) => {
+  const today = new Date(reference)
+  const day = today.getDate()
+  const close = Math.min(Math.max(closingDay || 1, 1), 28)
+
+  let start: Date
+  let end: Date
+
+  if (day > close) {
+    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
+    end = new Date(today.getFullYear(), today.getMonth() + 1, close)
+  } else {
+    start = new Date(today.getFullYear(), today.getMonth() - 1, close + 1)
+    end = new Date(today.getFullYear(), today.getMonth(), close)
+  }
+
+  start.setHours(0, 0, 0, 0)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
+export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit }: Props) {
   const { creditCards, transactions, deleteTransaction } = useFinance()
-  const [page, setPage] = useState(1)
   const [editTxId, setEditTxId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const PAGE_SIZE = 10
+  const [selectedMonth, setSelectedMonth] = useState<string>('current')
 
   const card = useMemo(() => creditCards.find((c) => c.id === cardId) ?? null, [cardId, creditCards])
 
-  const expenses = useMemo(() => {
+  // Gera tabs mensais baseado nos ciclos de fechamento
+  const monthTabs = useMemo<MonthTab[]>(() => {
     if (!card) return []
-    return transactions
-      .filter((tx) => tx.type === 'expense' && tx.accountId === card.id)
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
-  }, [card, transactions])
+    
+    const tabs: MonthTab[] = []
+    const now = new Date()
+    const closingDay = card.closingDay ?? 1
 
-  const totalPages = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE))
-  const paginated = expenses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    // Gera 6 meses (3 passados, atual, 2 futuros)
+    for (let i = -3; i <= 2; i++) {
+      const refDate = new Date(now.getFullYear(), now.getMonth() + i, 15)
+      const { start, end } = getCycleRangeHelper(closingDay, refDate)
+      
+      const monthKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`
+      const monthLabel = start.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      
+      tabs.push({
+        label: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+        monthKey: i === 0 ? 'current' : monthKey,
+        start,
+        end,
+        total: 0, // será calculado abaixo
+      })
+    }
+
+    return tabs
+  }, [card])
+
+  // Calcula total de cada mês e filtra transações
+  const expensesByMonth = useMemo(() => {
+    if (!card) return new Map<string, typeof transactions>()
+
+    const map = new Map<string, typeof transactions>()
+    
+    monthTabs.forEach((tab) => {
+      const monthExpenses = transactions.filter((tx) => {
+        if (tx.type !== 'expense' || tx.accountId !== card.id) return false
+        const txDate = tx.date.getTime()
+        return txDate >= tab.start.getTime() && txDate <= tab.end.getTime()
+      })
+      
+      // Calcula total (apenas pendentes para fatura)
+      const total = monthExpenses
+        .filter((tx) => tx.status === 'pending')
+        .reduce((sum, tx) => sum + (tx.amount || 0), 0)
+      
+      tab.total = total
+      map.set(tab.monthKey, monthExpenses.sort((a, b) => b.date.getTime() - a.date.getTime()))
+    })
+
+    return map
+  }, [card, transactions, monthTabs])
+
+  // Transações do mês selecionado
+  const currentExpenses = useMemo(() => {
+    return expensesByMonth.get(selectedMonth) || []
+  }, [expensesByMonth, selectedMonth])
+
+  const currentTab = useMemo(() => {
+    return monthTabs.find((t) => t.monthKey === selectedMonth) || monthTabs[0]
+  }, [monthTabs, selectedMonth])
+
   const usage = card ? (card.currentBill / card.limit) * 100 : 0
 
   if (!open || !card) return null
@@ -51,7 +132,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
           <div className="flex flex-col">
             <h2 className="text-heading-xl font-bold text-text-primary">{card.name ?? 'Cartão'}</h2>
             <p className="text-text-secondary text-sm">
-              Visualize detalhes completos e despesas do cartão de crédito.
+              Extrato detalhado e controle de faturas mensais
             </p>
           </div>
         </div>
@@ -64,23 +145,22 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
-        <div className="mx-auto w-full max-w-5xl py-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto bg-bg-secondary/60">
+        <div className="mx-auto w-full max-w-6xl py-6 flex flex-col gap-6">
+          {/* Resumo do Cartão */}
           <div className="bg-white rounded-xl p-6 flex flex-col gap-6">
-            {/* Info grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <InfoCard label="Limite total" value={formatCurrency(card.limit)} />
               <InfoCard label="Fatura atual" value={formatCurrency(card.currentBill)} />
               <InfoCard label="Limite disponível" value={formatCurrency(card.availableLimit ?? card.limit - card.currentBill)} />
               <InfoCard label="Uso do limite" value={`${usage.toFixed(1)}%`} />
-              <InfoCard label="Fechamento" value={`Dia ${card.closingDay}`} />
-              <InfoCard label="Vencimento" value={`Dia ${card.dueDay}`} />
-              {card.lastDigits ? <InfoCard label="Últimos dígitos" value={`•••• ${card.lastDigits}`} /> : null}
             </div>
 
-            {/* Barra de uso */}
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-semibold text-text-primary">Uso do limite</span>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-text-primary">Uso do limite</span>
+                <span className="text-text-secondary">{usage.toFixed(1)}%</span>
+              </div>
               <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
                 <div
                   className="h-full bg-black transition-all duration-300"
@@ -89,109 +169,137 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
               </div>
             </div>
 
-            {/* Tabela */}
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="grid grid-cols-[120px,1.2fr,1fr,120px,140px,100px] bg-gray-50 text-text-primary font-semibold text-body">
-                <div className="px-4 py-3">Data</div>
-                <div className="px-4 py-3">Descrição</div>
-                <div className="px-4 py-3">Categoria</div>
-                <div className="px-4 py-3">Parcelas</div>
-                <div className="px-4 py-3 text-right">Valor</div>
-                <div className="px-4 py-3 text-center">Ações</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div>
+                <span className="text-text-secondary">Fechamento: </span>
+                <span className="font-semibold text-text-primary">Dia {card.closingDay}</span>
               </div>
-              {paginated.length === 0 ? (
-                <div className="py-10 text-center text-text-secondary">Nenhuma despesa registrada neste cartão ainda.</div>
-              ) : (
-                paginated.map((tx, idx) => (
-                  <div
-                    key={tx.id}
-                    className={`grid grid-cols-[120px,1.2fr,1fr,120px,140px,100px] items-center px-2 py-3 ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'
+              <div>
+                <span className="text-text-secondary">Vencimento: </span>
+                <span className="font-semibold text-text-primary">Dia {card.dueDay}</span>
+              </div>
+              {card.lastDigits ? (
+                <div>
+                  <span className="text-text-secondary">Cartão: </span>
+                  <span className="font-semibold text-text-primary">•••• {card.lastDigits}</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Tabs Mensais */}
+          <div className="bg-white rounded-xl border border-border overflow-hidden">
+            <div className="border-b border-border bg-gray-50">
+              <div className="flex overflow-x-auto scrollbar-hide">
+                {monthTabs.map((tab) => (
+                  <button
+                    key={tab.monthKey}
+                    onClick={() => setSelectedMonth(tab.monthKey)}
+                    className={`px-6 py-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                      selectedMonth === tab.monthKey
+                        ? 'border-black text-text-primary bg-white'
+                        : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-gray-100'
                     }`}
                   >
-                    <div className="px-2 text-text-secondary text-sm">
-                      {formatDateUtil(tx.date)}
+                    <div className="flex flex-col items-start gap-1">
+                      <span>{tab.label}</span>
+                      <span className={`text-xs ${selectedMonth === tab.monthKey ? 'text-text-primary' : 'text-text-secondary'}`}>
+                        {formatCurrency(tab.total)}
+                      </span>
                     </div>
-                    <div className="px-2 text-text-primary">{tx.description}</div>
-                    <div className="px-2 text-text-secondary text-sm">{tx.category || 'Sem categoria'}</div>
-                    <div className="px-2 text-text-secondary text-sm">
-                      {tx.totalInstallments && tx.totalInstallments > 1
-                        ? `${tx.currentInstallment ?? 1}/${tx.totalInstallments}`
-                        : 'À vista'}
-                    </div>
-                    <div className="px-2 text-right font-semibold text-text-primary">{formatCurrency(tx.amount)}</div>
-                    <div className="px-2 flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setEditTxId(tx.id)}
-                        className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-blue-50 hover:border-blue-500 transition-button"
-                        aria-label="Editar transação"
-                        title="Editar"
-                      >
-                        <Icon name="edit" className="w-4 h-4 text-blue-600" />
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (confirm('Tem certeza que deseja excluir esta transação?')) {
-                            try {
-                              await deleteTransaction(tx.id)
-                              setToast('Transação excluída com sucesso!')
-                              setTimeout(() => setToast(null), 2000)
-                            } catch (err) {
-                              console.error('Erro ao excluir transação:', err)
-                              setToast('Erro ao excluir transação. Verifique o console.')
-                              setTimeout(() => setToast(null), 3000)
-                            }
-                          }
-                        }}
-                        className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-red-50 hover:border-red-500 transition-button"
-                        aria-label="Excluir transação"
-                        title="Excluir"
-                      >
-                        <Icon name="delete" className="w-4 h-4 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {totalPages > 1 ? (
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className={`h-9 px-3 rounded-full border border-border text-body transition-button ${
-                    page === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-text-secondary hover:bg-gray-100'
-                  }`}
-                >
-                  ←
-                </button>
-                <span className="text-body text-text-secondary">
-                  Página {page} de {totalPages}
+            {/* Extrato Detalhado */}
+            <div className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-heading-md font-semibold text-text-primary">
+                  Extrato - {currentTab.label}
+                </h3>
+                <span className="text-sm text-text-secondary">
+                  Total: <span className="font-semibold text-text-primary">{formatCurrency(currentTab.total)}</span>
                 </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className={`h-9 px-3 rounded-full border border-border text-body transition-button ${
-                    page === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-text-secondary hover:bg-gray-100'
-                  }`}
-                >
-                  →
-                </button>
               </div>
-            ) : null}
+
+              {currentExpenses.length === 0 ? (
+                <div className="py-12 text-center text-text-secondary">
+                  <Icon name="receipt" className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>Nenhuma transação neste período</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border overflow-hidden">
+                  <div className="grid grid-cols-[100px,1.5fr,1fr,100px,120px,100px] bg-gray-50 text-text-primary font-semibold text-sm">
+                    <div className="px-4 py-3">Data</div>
+                    <div className="px-4 py-3">Descrição</div>
+                    <div className="px-4 py-3">Categoria</div>
+                    <div className="px-4 py-3">Parcela</div>
+                    <div className="px-4 py-3 text-right">Valor</div>
+                    <div className="px-4 py-3 text-center">Ações</div>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {currentExpenses.map((tx, idx) => (
+                      <div
+                        key={tx.id}
+                        className={`grid grid-cols-[100px,1.5fr,1fr,100px,120px,100px] items-center px-4 py-3 ${
+                          idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'
+                        } hover:bg-gray-100 transition-colors`}
+                      >
+                        <div className="text-sm text-text-secondary">
+                          {formatDateUtil(tx.date)}
+                        </div>
+                        <div className="text-text-primary font-medium">{tx.description}</div>
+                        <div className="text-sm text-text-secondary">{tx.category || 'Sem categoria'}</div>
+                        <div className="text-sm text-text-secondary">
+                          {tx.totalInstallments && tx.totalInstallments > 1
+                            ? `${tx.currentInstallment ?? 1}/${tx.totalInstallments}`
+                            : 'À vista'}
+                        </div>
+                        <div className="text-right font-semibold text-text-primary">
+                          {formatCurrency(tx.amount)}
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setEditTxId(tx.id)}
+                            className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-blue-50 hover:border-blue-500 transition-button"
+                            aria-label="Editar transação"
+                            title="Editar"
+                          >
+                            <Icon name="edit" className="w-4 h-4 text-blue-600" />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (confirm('Tem certeza que deseja excluir esta transação?')) {
+                                try {
+                                  await deleteTransaction(tx.id)
+                                  setToast('Transação excluída com sucesso!')
+                                  setTimeout(() => setToast(null), 2000)
+                                } catch (err) {
+                                  console.error('Erro ao excluir transação:', err)
+                                  setToast('Erro ao excluir transação. Verifique o console.')
+                                  setTimeout(() => setToast(null), 3000)
+                                }
+                              }
+                            }}
+                            className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-red-50 hover:border-red-500 transition-button"
+                            aria-label="Excluir transação"
+                            title="Excluir"
+                          >
+                            <Icon name="delete" className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <footer className="sticky bottom-0 z-10 border-t border-border bg-white px-6 py-4 flex flex-wrap items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => card.id && onViewStatement?.(card.id)}
-          className="h-11 px-4 rounded-full border border-border text-text-primary hover:bg-gray-100 transition-button"
-        >
-          Ver Extrato Completo
-        </button>
         <button
           type="button"
           onClick={() => card.id && onAddExpense?.(card.id)}

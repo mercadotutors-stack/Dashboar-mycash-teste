@@ -25,26 +25,9 @@ type Props = {
 export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   const { bankAccounts, creditCards, transactions, updateTransaction } = useFinance()
   
-  // Calcula a data de vencimento baseada na conta/cartão
+  // Usa a data real da transação/parcela como data de vencimento
   const calculateDueDate = (tx: { date: Date; accountId: string }): Date => {
-    const card = creditCards.find((c) => c.id === tx.accountId)
-    if (card) {
-      // Se for cartão de crédito, calcula a data de vencimento baseada no dueDay
-      const now = new Date()
-      const currentYear = now.getFullYear()
-      const currentMonth = now.getMonth()
-      let dueDay = card.dueDay
-      
-      // Calcula o vencimento do próximo mês se o dia já passou
-      const dueDate = new Date(currentYear, currentMonth, dueDay)
-      if (dueDate < now) {
-        dueDate.setMonth(dueDate.getMonth() + 1)
-      }
-      
-      return dueDate
-    }
-    
-    // Se for conta bancária, usa a data da transação
+    // Retorna a data real da transação (que já está calculada corretamente para cada parcela)
     return tx.date
   }
 
@@ -70,7 +53,7 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
             accountId: tx.accountId,
             accountType: (card ? 'creditCard' : 'bank') as 'creditCard' | 'bank',
             isRecurring: tx.isRecurring,
-            installments: tx.installments,
+            installments: tx.totalInstallments,
             currentInstallment: tx.currentInstallment,
           }
         })
