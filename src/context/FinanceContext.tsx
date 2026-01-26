@@ -386,6 +386,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       const baseValue = Math.floor(totalCents / totalInstallments)
       const remainder = totalCents - baseValue * totalInstallments
 
+      // Descobre o ID da categoria pelo nome (se existente)
+      const categoryId =
+        input.category && input.category.trim()
+          ? categories.find((c) => c.name === input.category.trim())?.id ?? null
+          : null
+
       const payloads = Array.from({ length: totalInstallments }, (_, idx) => {
         const valueCents = baseValue + (idx < remainder ? 1 : 0)
         const installmentDate = addMonths(firstInstallmentDate, idx)
@@ -398,7 +404,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           date: installmentDate.toISOString().slice(0, 10),
           purchase_date: purchaseDate.toISOString().slice(0, 10),
           first_installment_date: firstInstallmentDate.toISOString().slice(0, 10),
-          category_id: null,
+          category_id: categoryId,
           account_id: input.accountId || null,
           member_id: input.memberId,
           total_installments: totalInstallments,
