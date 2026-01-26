@@ -50,7 +50,7 @@ export function ModalWrapper({ open, onClose, children, className = '' }: ModalW
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
+      className={`fixed inset-0 z-[9999] flex ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
