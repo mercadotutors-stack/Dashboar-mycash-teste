@@ -54,34 +54,51 @@ export function CurrencyInput({
   }, [value])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value
+    let inputValue = e.target.value
     
-    // Remove tudo exceto dígitos e vírgula
-    const cleaned = inputValue.replace(/[^\d,]/g, '')
+    // Remove tudo exceto dígitos e vírgula (incluindo pontos de milhar, R$, espaços, etc)
+    let cleaned = inputValue.replace(/[^\d,]/g, '')
     
-    // Garante apenas uma vírgula
-    const parts = cleaned.split(',')
-    let normalized = parts[0] || ''
-    if (parts.length > 1) {
-      // Limita casas decimais a 2
-      normalized += ',' + parts.slice(1).join('').slice(0, 2)
-    }
-    
-    // Formata enquanto digita
-    if (normalized) {
-      const [integerPart, decimalPart = ''] = normalized.split(',')
-      // Adiciona pontos de milhar
-      const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-      const formatted = decimalPart ? `${formattedInteger},${decimalPart}` : formattedInteger
-      setDisplayValue(formatted)
-      
-      // Chama onChange com valor numérico
-      const numericValue = parseFromDisplay(formatted)
-      onChange(numericValue)
-    } else {
+    // Se não há nada, limpa
+    if (!cleaned || cleaned === ',') {
       setDisplayValue('')
       onChange(0)
+      return
     }
+    
+    // Garante apenas uma vírgula (pega a primeira se houver múltiplas)
+    const commaIndex = cleaned.indexOf(',')
+    let integerPart = ''
+    let decimalPart = ''
+    
+    if (commaIndex >= 0) {
+      integerPart = cleaned.substring(0, commaIndex)
+      decimalPart = cleaned.substring(commaIndex + 1).replace(/,/g, '').slice(0, 2) // Remove vírgulas extras e limita a 2 decimais
+    } else {
+      integerPart = cleaned
+    }
+    
+    // Remove zeros à esquerda, mas mantém pelo menos um dígito
+    integerPart = integerPart.replace(/^0+/, '') || '0'
+    
+    // Se a parte inteira está vazia mas há decimais, adiciona zero
+    if (!integerPart && decimalPart) {
+      integerPart = '0'
+    }
+    
+    // Formata a parte inteira com pontos de milhar (a cada 3 dígitos da direita para esquerda)
+    // Usa regex para adicionar pontos corretamente
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    
+    // Monta o valor formatado final
+    const formatted = decimalPart ? `${formattedInteger},${decimalPart}` : formattedInteger
+    
+    // Atualiza o display
+    setDisplayValue(formatted)
+    
+    // Converte para número usando a função utilitária e chama onChange
+    const numericValue = parseFromDisplay(formatted)
+    onChange(numericValue)
   }
 
   const handleBlur = () => {

@@ -20,11 +20,11 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
         box-border
       `}
     >
-      {/* Botão toggle - posicionado no meio vertical da sidebar */}
+      {/* Botão toggle - posicionado no topo do sidebar (32px do topo) */}
       <button
         onClick={toggle}
         className={`
-          absolute -right-3 top-1/2 -translate-y-1/2
+          absolute -right-3 top-8
           w-8 h-8 rounded-full border border-sidebar-border
           bg-bg-primary flex items-center justify-center
           shadow-[0px_4px_4px_rgba(0,0,0,0.25)]

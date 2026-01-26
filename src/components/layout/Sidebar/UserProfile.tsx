@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
 import { useAuth } from '../../../context/AuthContext'
+import { useFinance } from '../../../context/FinanceContext'
 import { Icon } from '../../ui/Icon'
 import { ROUTES } from '../../../constants'
 
@@ -9,6 +11,7 @@ interface UserProfileProps {
 
 export function UserProfile({ isExpanded }: UserProfileProps) {
   const { user, signOut } = useAuth()
+  const { familyMembers } = useFinance()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -16,9 +19,25 @@ export function UserProfile({ isExpanded }: UserProfileProps) {
     navigate(ROUTES.LOGIN)
   }
 
+  // Busca o membro da família correspondente ao email do usuário logado
+  // Se não encontrar, usa o primeiro membro (geralmente é o dono da conta)
+  const currentMember = useMemo(() => {
+    if (!user?.email || familyMembers.length === 0) return null
+    
+    const userEmail = user.email.toLowerCase()
+    
+    // Primeiro tenta encontrar por email
+    const foundByEmail = familyMembers.find((member) => member.email.toLowerCase() === userEmail)
+    if (foundByEmail) return foundByEmail
+    
+    // Se não encontrar, usa o primeiro membro (dono da conta)
+    return familyMembers[0] || null
+  }, [user?.email, familyMembers])
+
   const userEmail = user?.email || ''
-  const userName = userEmail.split('@')[0] || 'Usuário'
+  const userName = currentMember?.name || userEmail.split('@')[0] || 'Usuário'
   const userInitial = userName.charAt(0).toUpperCase()
+  const avatarUrl = currentMember?.avatarUrl
 
   return (
     <div className={`
@@ -32,14 +51,30 @@ export function UserProfile({ isExpanded }: UserProfileProps) {
       `}>
         {/* Avatar */}
         <div 
-          className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden"
+          className="flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden transition-avatar"
           style={{
-            width: '24px',
-            height: '24px',
+            width: '40px',
+            height: '40px',
             backgroundColor: 'var(--color-sidebar-avatar-bg)',
           }}
         >
-          {userInitial}
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={userName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+                const parent = target.parentElement
+                if (parent) {
+                  parent.textContent = userInitial
+                }
+              }}
+            />
+          ) : (
+            userInitial
+          )}
         </div>
 
         {/* Informações (apenas quando expandido) */}
