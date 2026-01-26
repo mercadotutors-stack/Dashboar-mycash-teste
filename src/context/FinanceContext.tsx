@@ -474,6 +474,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (updates.currentInstallment !== undefined) {
         payload.installment_number = updates.currentInstallment
       }
+      // Atualiza categoria se informada (mapeia nome -> id)
+      if (updates.category !== undefined) {
+        const catName = updates.category?.trim() ?? ''
+        const categoryId =
+          catName.length > 0 ? categories.find((c) => c.name === catName)?.id ?? null : null
+        payload.category_id = categoryId
+      }
       
       const { error } = await supabase.from('transactions').update(payload).eq('id', id)
       if (error) throw error
@@ -487,6 +494,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
               ...updates,
               status: updates.isPaid ? 'completed' : (updates.status ?? tx.status),
               isPaid: updates.isPaid ?? (updates.status === 'completed' ? true : false),
+              category: updates.category !== undefined ? updates.category ?? 'Sem categoria' : tx.category,
             }
           }
           return tx
@@ -496,7 +504,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         return updated
       })
     },
-    [userId, deriveCreditCards],
+    [userId, deriveCreditCards, categories],
   )
 
   const addFamilyMember = useCallback(
