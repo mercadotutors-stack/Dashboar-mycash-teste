@@ -49,12 +49,15 @@ const getNextBillRange = (closingDay: number, reference = new Date()) => {
 
   if (day <= close) {
     // Ainda não fechou este mês, próxima fatura fecha no closingDay deste mês
+    // Período: (close + 1) deste mês até close do próximo mês
     start = new Date(today.getFullYear(), today.getMonth(), close + 1)
     end = new Date(today.getFullYear(), today.getMonth() + 1, close)
   } else {
     // Já fechou este mês, próxima fatura fecha no closingDay do próximo mês
-    start = new Date(today.getFullYear(), today.getMonth() + 1, close + 1)
-    end = new Date(today.getFullYear(), today.getMonth() + 2, close)
+    // Período: (close + 1) do próximo mês até close do mês seguinte
+    // Ex: hoje 26/jan, close=10 → próxima fecha 10/fev (período: 11/jan até 10/fev)
+    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
+    end = new Date(today.getFullYear(), today.getMonth() + 1, close)
   }
 
   start.setHours(0, 0, 0, 0)
