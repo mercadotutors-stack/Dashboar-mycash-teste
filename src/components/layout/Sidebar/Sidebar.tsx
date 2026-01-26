@@ -10,7 +10,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
-  const { workspaces, activeWorkspaceId, setActiveWorkspace } = useFinance()
+  const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useFinance()
 
   return (
     <aside
@@ -70,8 +70,32 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           {/* Navegação (32px abaixo do logo no desktop) */}
           <div className="flex flex-col gap-3 mt-8 w-full">
             {/* Workspace Switcher no sidebar */}
-            <div className="flex items-center gap-2">
-              <Icon name="workspace_premium" className="w-5 h-5 text-text-secondary" />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="workspace_premium" className="w-5 h-5 text-text-secondary" />
+                  <span className="text-sm font-semibold text-text-primary">Workspaces</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const name = prompt('Nome do novo workspace')
+                    if (!name) return
+                    const type = prompt('Tipo (family, company, other)', 'family') || 'family'
+                    try {
+                      const id = await createWorkspace({ name, type })
+                      setActiveWorkspace(id)
+                    } catch (err) {
+                      console.error(err)
+                      alert('Erro ao criar workspace')
+                    }
+                  }}
+                  className="flex items-center gap-1 text-sm text-text-primary hover:text-black"
+                >
+                  <Icon name="add" className="w-4 h-4" />
+                  <span>Novo workspace</span>
+                </button>
+              </div>
               <select
                 value={activeWorkspaceId}
                 onChange={(e) => setActiveWorkspace(e.target.value)}
