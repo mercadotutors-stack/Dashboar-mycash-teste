@@ -37,34 +37,6 @@ const themeStyles: Record<
   },
 }
 
-// Calcula o intervalo da próxima fatura a vencer (não a atual que já foi paga)
-// A lógica considera que todo dia de fechamento (ex: dia 10) a fatura muda
-const getNextBillRange = (closingDay: number, reference = new Date()) => {
-  const today = new Date(reference)
-  const day = today.getDate()
-  const close = Math.min(Math.max(closingDay || 1, 1), 28)
-
-  let start: Date
-  let end: Date
-
-  if (day <= close) {
-    // Ainda não fechou este mês, próxima fatura fecha no closingDay deste mês
-    // Período: (close + 1) deste mês até close do próximo mês
-    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
-    end = new Date(today.getFullYear(), today.getMonth() + 1, close)
-  } else {
-    // Já fechou este mês, próxima fatura fecha no closingDay do próximo mês
-    // Período: (close + 1) do próximo mês até close do mês seguinte
-    // Ex: hoje 26/jan, close=10 → próxima fecha 10/fev (período: 11/jan até 10/fev)
-    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
-    end = new Date(today.getFullYear(), today.getMonth() + 1, close)
-  }
-
-  start.setHours(0, 0, 0, 0)
-  end.setHours(23, 59, 59, 999)
-  return { start, end }
-}
-
 export function CreditCardsWidget() {
   const { creditCards, bankAccounts, transactions } = useFinance()
   const navigate = useNavigate()
@@ -155,16 +127,42 @@ export function CreditCardsWidget() {
               const card = item
               const style = themeStyles[(card.theme as Theme) || 'white'] || themeStyles.white
               
-              // Calcula a próxima fatura a vencer
-              const { start, end } = getNextBillRange(card.closingDay ?? 10)
-              const nextBillTransactions = transactions.filter(
-                (tx) =>
-                  tx.accountId === card.id &&
-                  tx.type === 'expense' &&
-                  tx.status === 'pending' &&
-                  tx.date.getTime() >= start.getTime() &&
-                  tx.date.getTime() <= end.getTime()
-              )
+              // Calcula a próxima fatura a vencer (mesma lógica do CardDetailsModal)
+              // Se hoje > closingDay: próxima fecha no próximo mês (período: close+1 deste mês até close do próximo)
+              // Se hoje <= closingDay: próxima fecha neste mês (período: close+1 do mês anterior até close deste mês)
+              const today = new Date()
+              const day = today.getDate()
+              const close = Math.min(Math.max(card.closingDay ?? 10, 1), 28)
+              
+              let start: Date
+              let end: Date
+              
+              if (day > close) {
+                // Já fechou este mês, próxima fatura fecha no próximo mês
+                // Ex: hoje 26/jan, close=10 → próxima fecha 10/fev (período: 11/jan até 10/fev)
+                start = new Date(today.getFullYear(), today.getMonth(), close + 1)
+                end = new Date(today.getFullYear(), today.getMonth() + 1, close)
+              } else {
+                // Ainda não fechou este mês, próxima fatura fecha neste mês
+                // Ex: hoje 5/jan, close=10 → próxima fecha 10/jan (período: 11/dez até 10/jan)
+                start = new Date(today.getFullYear(), today.getMonth() - 1, close + 1)
+                end = new Date(today.getFullYear(), today.getMonth(), close)
+              }
+              
+              start.setHours(0, 0, 0, 0)
+              end.setHours(23, 59, 59, 999)
+              
+              // Filtra transações da próxima fatura (pendentes dentro do período)
+              const nextBillTransactions = transactions.filter((tx) => {
+                if (tx.accountId !== card.id) return false
+                if (tx.type !== 'expense') return false
+                if (tx.status !== 'pending') return false
+                
+                const txDate = tx.date.getTime()
+                const inRange = txDate >= start.getTime() && txDate <= end.getTime()
+                return inRange
+              })
+              
               const nextBillAmount = nextBillTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0)
               
               const usage = Math.round((nextBillAmount / card.limit) * 100)
