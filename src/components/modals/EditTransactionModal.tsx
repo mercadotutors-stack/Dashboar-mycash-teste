@@ -24,6 +24,11 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
   const [memberId, setMemberId] = useState<string | null>(null)
   const [accountId, setAccountId] = useState('')
   const [date, setDate] = useState('')
+  const [purchaseDate, setPurchaseDate] = useState('')
+  const [firstInstallmentDate, setFirstInstallmentDate] = useState('')
+  const [totalInstallments, setTotalInstallments] = useState<number>(1)
+  const [paidInstallments, setPaidInstallments] = useState<number>(0)
+  const [currentInstallment, setCurrentInstallment] = useState<number>(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [toast, setToast] = useState<string | null>(null)
 
@@ -36,6 +41,11 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
       setMemberId(transaction.memberId)
       setAccountId(transaction.accountId)
       setDate(transaction.date.toISOString().split('T')[0])
+      setPurchaseDate(transaction.purchaseDate ? transaction.purchaseDate.toISOString().split('T')[0] : transaction.date.toISOString().split('T')[0])
+      setFirstInstallmentDate(transaction.firstInstallmentDate ? transaction.firstInstallmentDate.toISOString().split('T')[0] : transaction.date.toISOString().split('T')[0])
+      setTotalInstallments(transaction.totalInstallments ?? transaction.installments ?? 1)
+      setPaidInstallments(transaction.paidInstallments ?? 0)
+      setCurrentInstallment(transaction.currentInstallment ?? 1)
       setErrors({})
     }
   }, [open, transaction])
@@ -68,6 +78,13 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
     if (!category) nextErrors.category = 'Selecione uma categoria.'
     if (!accountId) nextErrors.accountId = 'Selecione uma conta ou cartão.'
     if (!date) nextErrors.date = 'Selecione uma data.'
+    if (!purchaseDate) nextErrors.purchaseDate = 'Informe a data da compra.'
+    if (!firstInstallmentDate) nextErrors.firstInstallmentDate = 'Informe a data da 1ª parcela.'
+    if (totalInstallments <= 0) nextErrors.totalInstallments = 'Total de parcelas deve ser maior que zero.'
+    if (paidInstallments < 0 || paidInstallments > totalInstallments)
+      nextErrors.paidInstallments = 'Parcelas pagas deve ser entre 0 e o total.'
+    if (currentInstallment <= 0 || currentInstallment > totalInstallments)
+      nextErrors.currentInstallment = 'Parcela atual deve estar entre 1 e o total.'
 
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
@@ -83,6 +100,11 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
         description: description.trim(),
         category,
         date: new Date(date),
+        purchaseDate: new Date(purchaseDate),
+        firstInstallmentDate: new Date(firstInstallmentDate),
+        totalInstallments,
+        paidInstallments,
+        currentInstallment,
         accountId,
         memberId,
       })
@@ -211,6 +233,82 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
               />
               {errors.date ? <p className="text-sm text-red-600">{errors.date}</p> : null}
             </div>
+
+          {/* Datas de compra e 1ª parcela */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Data da compra</label>
+              <input
+                type="date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.purchaseDate ? 'border-red-500' : 'border-border'
+                }`}
+              />
+              {errors.purchaseDate ? <p className="text-sm text-red-600">{errors.purchaseDate}</p> : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Data da 1ª parcela</label>
+              <input
+                type="date"
+                value={firstInstallmentDate}
+                onChange={(e) => setFirstInstallmentDate(e.target.value)}
+                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.firstInstallmentDate ? 'border-red-500' : 'border-border'
+                }`}
+              />
+              {errors.firstInstallmentDate ? (
+                <p className="text-sm text-red-600">{errors.firstInstallmentDate}</p>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Parcelamento */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Total de parcelas</label>
+              <input
+                type="number"
+                min={1}
+                value={totalInstallments}
+                onChange={(e) => setTotalInstallments(Number(e.target.value))}
+                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.totalInstallments ? 'border-red-500' : 'border-border'
+                }`}
+              />
+              {errors.totalInstallments ? <p className="text-sm text-red-600">{errors.totalInstallments}</p> : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Parcelas já pagas</label>
+              <input
+                type="number"
+                min={0}
+                value={paidInstallments}
+                onChange={(e) => setPaidInstallments(Number(e.target.value))}
+                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.paidInstallments ? 'border-red-500' : 'border-border'
+                }`}
+              />
+              {errors.paidInstallments ? <p className="text-sm text-red-600">{errors.paidInstallments}</p> : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-text-primary">Parcela atual</label>
+              <input
+                type="number"
+                min={1}
+                value={currentInstallment}
+                onChange={(e) => setCurrentInstallment(Number(e.target.value))}
+                className={`h-12 rounded-full border bg-white px-4 text-body text-text-primary outline-none ${
+                  errors.currentInstallment ? 'border-red-500' : 'border-border'
+                }`}
+              />
+              {errors.currentInstallment ? <p className="text-sm text-red-600">{errors.currentInstallment}</p> : null}
+            </div>
+          </div>
 
             {/* Categoria */}
             <div className="flex flex-col gap-2">

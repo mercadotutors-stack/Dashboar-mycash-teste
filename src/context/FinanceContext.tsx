@@ -482,6 +482,36 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           catName.length > 0 ? categories.find((c) => c.name === catName)?.id ?? null : null
         payload.category_id = categoryId
       }
+      if (updates.date !== undefined) {
+        payload.date = updates.date.toISOString().slice(0, 10)
+      }
+      if (updates.purchaseDate !== undefined) {
+        payload.purchase_date = updates.purchaseDate.toISOString().slice(0, 10)
+      }
+      if (updates.firstInstallmentDate !== undefined) {
+        payload.first_installment_date = updates.firstInstallmentDate.toISOString().slice(0, 10)
+      }
+      if (updates.totalInstallments !== undefined) {
+        payload.total_installments = updates.totalInstallments
+      }
+      if (updates.paidInstallments !== undefined) {
+        payload.paid_installments = updates.paidInstallments
+      }
+      if (updates.accountId !== undefined) {
+        payload.account_id = updates.accountId || null
+      }
+      if (updates.memberId !== undefined) {
+        payload.member_id = updates.memberId
+      }
+      if (updates.amount !== undefined) {
+        payload.amount = updates.amount
+      }
+      if (updates.description !== undefined) {
+        payload.description = updates.description
+      }
+      if (updates.type !== undefined) {
+        payload.type = updates.type === 'income' ? 'INCOME' : 'EXPENSE'
+      }
       
       const { error } = await supabase.from('transactions').update(payload).eq('id', id)
       if (error) throw error
