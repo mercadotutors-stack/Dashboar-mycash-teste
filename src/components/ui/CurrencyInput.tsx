@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, type ChangeEvent, type FocusEvent } from 'react'
-import { formatCurrency, parseCurrencyInput } from '../../utils'
 
 interface CurrencyInputProps {
   value: number | string
@@ -13,6 +12,15 @@ interface CurrencyInputProps {
 
 /**
  * Componente de input com máscara monetária BRL (formato: 1.000.000,00)
+ * 
+ * LÓGICA: O usuário digita apenas números, cada dígito representa centavos
+ * - 1 → R$ 0,01
+ * - 10 → R$ 0,10
+ * - 100 → R$ 1,00
+ * - 1000 → R$ 10,00
+ * - 123456 → R$ 1.234,56
+ * 
+ * O valor interno é armazenado em reais (number), não em centavos
  */
 export function CurrencyInput({
   value,
@@ -25,87 +33,104 @@ export function CurrencyInput({
 }: CurrencyInputProps) {
   const [displayValue, setDisplayValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const isTypingRef = useRef(false)
 
-  // Converte número para string formatada (ex: 1000.50 -> "1.000,50")
-  const formatToDisplay = (num: number | string): string => {
-    if (num === '' || num === null || num === undefined) return ''
-    const numValue = typeof num === 'string' ? parseCurrencyInput(num) : num
-    if (isNaN(numValue) || numValue === 0) return ''
+  // Valor máximo: R$ 1.000.000,00 = 100000000 centavos
+  const MAX_CENTAVOS = 100000000
+
+  /**
+   * Formata um número em reais para exibição (pt-BR)
+   * Ex: 1234.56 → "1.234,56"
+   */
+  const formatToDisplay = (reais: number): string => {
+    if (reais === 0 || isNaN(reais)) return ''
     
-    // Remove o "R$ " do formatCurrency e retorna apenas o valor formatado
-    return formatCurrency(numValue).replace('R$ ', '')
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(reais)
   }
 
-  // Converte string formatada para número (ex: "1.000,50" -> 1000.50)
-  const parseFromDisplay = (str: string): number => {
-    if (!str) return 0
-    const parsed = parseCurrencyInput(str)
-    return Math.max(min, parsed)
+  /**
+   * Converte centavos (número digitado) para reais
+   * Ex: 123456 centavos → 1234.56 reais
+   */
+  const centavosToReais = (centavos: number): number => {
+    return centavos / 100
   }
 
-  // Atualiza displayValue quando value prop muda
+  /**
+   * Converte reais para centavos
+   * Ex: 1234.56 reais → 123456 centavos
+   */
+  const reaisToCentavos = (reais: number): number => {
+    return Math.round(reais * 100)
+  }
+
+  // Atualiza displayValue quando value prop muda externamente (não durante digitação)
   useEffect(() => {
-    if (typeof value === 'number') {
-      setDisplayValue(formatToDisplay(value))
-    } else if (typeof value === 'string') {
-      const num = parseFloat(value) || 0
-      setDisplayValue(formatToDisplay(num))
+    if (isTypingRef.current) {
+      return
+    }
+    
+    const reais = typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) || 0 : 0)
+    const formatted = formatToDisplay(reais)
+    
+    if (formatted !== displayValue) {
+      setDisplayValue(formatted)
     }
   }, [value])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    isTypingRef.current = true
+    
     let inputValue = e.target.value
     
-    // Remove tudo exceto dígitos e vírgula (incluindo pontos de milhar, R$, espaços, etc)
-    let cleaned = inputValue.replace(/[^\d,]/g, '')
+    // Remove tudo exceto dígitos (não aceita vírgula, ponto, R$, etc)
+    // O usuário digita apenas números, cada dígito = centavos
+    const digitsOnly = inputValue.replace(/\D/g, '')
     
     // Se não há nada, limpa
-    if (!cleaned || cleaned === ',') {
+    if (!digitsOnly) {
       setDisplayValue('')
       onChange(0)
+      isTypingRef.current = false
       return
     }
     
-    // Garante apenas uma vírgula (pega a primeira se houver múltiplas)
-    const commaIndex = cleaned.indexOf(',')
-    let integerPart = ''
-    let decimalPart = ''
+    // Converte para número (centavos)
+    let centavos = parseInt(digitsOnly, 10)
     
-    if (commaIndex >= 0) {
-      integerPart = cleaned.substring(0, commaIndex)
-      decimalPart = cleaned.substring(commaIndex + 1).replace(/,/g, '').slice(0, 2) // Remove vírgulas extras e limita a 2 decimais
-    } else {
-      integerPart = cleaned
+    // Limita ao máximo permitido (R$ 1.000.000,00 = 100.000.000 centavos)
+    if (centavos > MAX_CENTAVOS) {
+      centavos = MAX_CENTAVOS
     }
     
-    // Remove zeros à esquerda, mas mantém pelo menos um dígito
-    integerPart = integerPart.replace(/^0+/, '') || '0'
+    // Converte centavos para reais
+    const reais = centavosToReais(centavos)
     
-    // Se a parte inteira está vazia mas há decimais, adiciona zero
-    if (!integerPart && decimalPart) {
-      integerPart = '0'
-    }
-    
-    // Formata a parte inteira com pontos de milhar (a cada 3 dígitos da direita para esquerda)
-    // Usa regex para adicionar pontos corretamente
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-    
-    // Monta o valor formatado final
-    const formatted = decimalPart ? `${formattedInteger},${decimalPart}` : formattedInteger
+    // Formata para exibição (pt-BR: ponto para milhar, vírgula para decimal)
+    const formatted = formatToDisplay(reais)
     
     // Atualiza o display
     setDisplayValue(formatted)
     
-    // Converte para número usando a função utilitária e chama onChange
-    const numericValue = parseFromDisplay(formatted)
-    onChange(numericValue)
+    // Chama onChange com valor em reais (não centavos)
+    onChange(Math.max(min, reais))
+    
+    // Reseta flag após um pequeno delay
+    setTimeout(() => {
+      isTypingRef.current = false
+    }, 0)
   }
 
   const handleBlur = () => {
     // Garante formatação completa ao perder foco
-    const numValue = parseFromDisplay(displayValue)
-    setDisplayValue(formatToDisplay(numValue))
-    onChange(numValue)
+    const reais = typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) || 0 : 0)
+    const formatted = formatToDisplay(reais)
+    setDisplayValue(formatted)
+    onChange(Math.max(min, reais))
+    isTypingRef.current = false
   }
 
   const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
