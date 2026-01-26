@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../context/FinanceContext'
+import { useFeedback } from '../context/FeedbackContext'
 import { uploadImage } from '../lib/uploadImage'
 import { ROUTES } from '../constants'
 import { Icon } from '../components/ui/Icon'
 
 export default function CreateWorkspace() {
   const { createWorkspace, setActiveWorkspace, userId } = useFinance()
+  const { show } = useFeedback()
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [name, setName] = useState('')
@@ -44,7 +46,12 @@ export default function CreateWorkspace() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert('Por favor, informe o nome do workspace')
+      show('Por favor, informe o nome do workspace', 'error')
+      return
+    }
+
+    if (!userId) {
+      show('Usuário não autenticado. Por favor, faça login novamente.', 'error')
       return
     }
 
@@ -52,10 +59,19 @@ export default function CreateWorkspace() {
       setIsSaving(true)
       let avatarUrl: string | null = null
 
-      if (avatarFile && userId) {
-        const uploaded = await uploadImage(avatarFile, userId, 'workspace')
-        if (uploaded) {
-          avatarUrl = uploaded
+      // Upload de imagem (opcional - não bloqueia criação se falhar)
+      if (avatarFile) {
+        try {
+          const uploaded = await uploadImage(avatarFile, userId, 'workspace')
+          if (uploaded) {
+            avatarUrl = uploaded
+          } else {
+            console.warn('Upload de imagem falhou, mas continuando criação do workspace sem imagem')
+          }
+        } catch (uploadErr: any) {
+          console.error('Erro no upload de imagem:', uploadErr)
+          // Continua sem imagem se upload falhar - não é crítico
+          show('Aviso: Não foi possível fazer upload da imagem, mas o workspace será criado sem ela.', 'info', 4000)
         }
       }
 
@@ -66,11 +82,13 @@ export default function CreateWorkspace() {
         avatarUrl,
       })
 
+      show('Workspace criado com sucesso!', 'success')
       setActiveWorkspace(id)
       navigate(ROUTES.DASHBOARD)
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao criar workspace')
+    } catch (err: any) {
+      console.error('Erro ao criar workspace:', err)
+      const errorMessage = err?.message || err?.error?.message || 'Erro desconhecido ao criar workspace'
+      show(`Erro ao criar workspace: ${errorMessage}`, 'error', 5000)
     } finally {
       setIsSaving(false)
     }

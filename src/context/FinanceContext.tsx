@@ -1142,29 +1142,44 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setActiveWorkspace: (id: string) => setActiveWorkspaceId(id || DEFAULT_WORKSPACE_ID),
     createWorkspace: async (input) => {
       if (!userId) throw new Error('Usuário não autenticado')
-      const { data, error } = await supabase
-        .from('workspaces')
-        .insert({
-          name: input.name,
-          type: input.type ?? 'family',
-          owner_id: userId,
-          subtitle: input.subtitle ?? null,
-          avatar_url: input.avatarUrl ?? null,
-        })
-        .select('*')
-        .single()
-      if (error) throw error
-      const ws: Workspace = {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        ownerId: data.owner_id,
-        subtitle: data.subtitle ?? null,
-        avatarUrl: data.avatar_url ?? null,
+      
+      try {
+        const { data, error } = await supabase
+          .from('workspaces')
+          .insert({
+            name: input.name,
+            type: input.type ?? 'family',
+            owner_id: userId,
+            subtitle: input.subtitle ?? null,
+            avatar_url: input.avatarUrl ?? null,
+          })
+          .select('*')
+          .single()
+        
+        if (error) {
+          console.error('Erro ao criar workspace no banco:', error)
+          throw new Error(error.message || 'Erro ao criar workspace no banco de dados')
+        }
+        
+        if (!data) {
+          throw new Error('Workspace criado mas nenhum dado retornado')
+        }
+        
+        const ws: Workspace = {
+          id: data.id,
+          name: data.name,
+          type: data.type,
+          ownerId: data.owner_id,
+          subtitle: data.subtitle ?? null,
+          avatarUrl: data.avatar_url ?? null,
+        }
+        setWorkspaces((prev) => [...prev, ws])
+        setActiveWorkspaceId(data.id)
+        return data.id as string
+      } catch (err: any) {
+        console.error('Erro completo ao criar workspace:', err)
+        throw err instanceof Error ? err : new Error('Erro desconhecido ao criar workspace')
       }
-      setWorkspaces((prev) => [...prev, ws])
-      setActiveWorkspaceId(data.id)
-      return data.id as string
     },
     updateWorkspace: async (id, input) => {
       if (!userId) throw new Error('Usuário não autenticado')
