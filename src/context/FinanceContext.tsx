@@ -58,6 +58,30 @@ const mapStatus = (dbStatus?: string): 'pending' | 'completed' | 'cancelled' => 
 }
 const mapType = (dbType?: string): 'income' | 'expense' => (dbType === 'INCOME' ? 'income' : 'expense')
 
+// Retorna intervalo (inclusive) do ciclo corrente, baseado no dia de fechamento
+const getCycleRange = (closingDay: number, reference = new Date()) => {
+  const today = new Date(reference)
+  const day = today.getDate()
+  const close = Math.min(Math.max(closingDay || 1, 1), 28) // evitar transbordo em meses curtos
+
+  let start: Date
+  let end: Date
+
+  if (day > close) {
+    // ciclo iniciou este mês, termina próximo fechamento
+    start = new Date(today.getFullYear(), today.getMonth(), close + 1)
+    end = new Date(today.getFullYear(), today.getMonth() + 1, close)
+  } else {
+    // ciclo iniciou no mês anterior
+    start = new Date(today.getFullYear(), today.getMonth() - 1, close + 1)
+    end = new Date(today.getFullYear(), today.getMonth(), close)
+  }
+
+  start.setHours(0, 0, 0, 0)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
 const INITIAL_FILTERS: GlobalFilters = {
   selectedMember: null,
   dateRange: null,
@@ -168,17 +192,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         )
       }
 
+      let banks: BankAccount[] = []
+      let cardsBase: CreditCard[] = []
       if (acc.data) {
-        const banks: BankAccount[] = []
-        const cards: CreditCard[] = []
         acc.data.forEach((a) => {
           if (a.type === 'CREDIT_CARD') {
-            cards.push({
+            cardsBase.push({
               id: a.id,
               name: a.name,
               holderId: a.holder_id,
               limit: Number(a.credit_limit ?? 0),
-              currentBill: Number(a.current_bill ?? 0),
+              currentBill: 0, // será derivado com base nas parcelas pendentes do ciclo
               closingDay: a.closing_day ?? 1,
               dueDay: a.due_day ?? 1,
               theme: (a.theme as any) ?? 'black',
@@ -201,47 +225,49 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           }
         })
         setBankAccounts(banks)
-        setCreditCards(cards)
       }
 
+      let categoriesMapped: Category[] = []
       if (cat.data) {
-        setCategories(
-          cat.data.map((c) => ({
-            id: c.id,
-            name: c.name,
-            type: mapType(c.type),
-          })),
-        )
+        categoriesMapped = cat.data.map((c) => ({
+          id: c.id,
+          name: c.name,
+          type: mapType(c.type),
+        }))
+        setCategories(categoriesMapped)
       }
 
+      let txMapped: Transaction[] = []
       if (tx.data) {
         const catMap = new Map<string, string>()
-        cat.data?.forEach((c) => catMap.set(c.id, c.name))
-        setTransactions(
-          tx.data.map((t) => ({
-            id: t.id,
-            type: mapType(t.type),
-            amount: Number(t.amount ?? 0),
-            description: t.description,
-            category: t.category_id ? catMap.get(t.category_id) ?? 'Sem categoria' : 'Sem categoria',
-            date: toDate(t.date),
-            accountId: t.account_id ?? '',
-            memberId: t.member_id ?? null,
-            installments: t.total_installments ?? 1, // legado
-            currentInstallment: t.installment_number ?? 1, // legado
-            totalInstallments: t.total_installments ?? 1,
-            paidInstallments: t.paid_installments ?? 0,
-            purchaseDate: t.purchase_date ? toDate(t.purchase_date) : undefined,
-            firstInstallmentDate: t.first_installment_date ? toDate(t.first_installment_date) : undefined,
-            parentTransactionId: t.parent_transaction_id ?? null,
-            status: mapStatus(t.status),
-            isRecurring: Boolean(t.is_recurring),
-            isPaid: mapStatus(t.status) === 'completed',
-            createdAt: toDate(t.created_at),
-            updatedAt: toDate(t.updated_at),
-          })),
-        )
+        categoriesMapped.forEach((c) => catMap.set(c.id, c.name))
+        txMapped = tx.data.map((t) => ({
+          id: t.id,
+          type: mapType(t.type),
+          amount: Number(t.amount ?? 0),
+          description: t.description,
+          category: t.category_id ? catMap.get(t.category_id) ?? 'Sem categoria' : 'Sem categoria',
+          date: toDate(t.date),
+          accountId: t.account_id ?? '',
+          memberId: t.member_id ?? null,
+          installments: t.total_installments ?? 1, // legado
+          currentInstallment: t.installment_number ?? 1, // legado
+          totalInstallments: t.total_installments ?? 1,
+          paidInstallments: t.paid_installments ?? 0,
+          purchaseDate: t.purchase_date ? toDate(t.purchase_date) : undefined,
+          firstInstallmentDate: t.first_installment_date ? toDate(t.first_installment_date) : undefined,
+          parentTransactionId: t.parent_transaction_id ?? null,
+          status: mapStatus(t.status),
+          isRecurring: Boolean(t.is_recurring),
+          isPaid: mapStatus(t.status) === 'completed',
+          createdAt: toDate(t.created_at),
+          updatedAt: toDate(t.updated_at),
+        }))
+        setTransactions(txMapped)
       }
+
+      const cardsDerived = deriveCreditCards(cardsBase, txMapped)
+      setCreditCards(cardsDerived)
       } catch (err) {
         console.error('Erro ao carregar dados:', err)
       }
@@ -299,6 +325,36 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     })
   }, [transactions, filters, accountOwnerMap])
 
+  const deriveCreditCards = useCallback(
+    (cards: CreditCard[], txs: Transaction[]) => {
+      return cards.map((card) => {
+        const pendingExpenses = txs.filter(
+          (tx) => tx.accountId === card.id && tx.type === 'expense' && tx.status === 'pending',
+        )
+
+        // Parcela que pertence à fatura atual (ciclo corrente)
+        const { start, end } = getCycleRange(card.closingDay ?? 1)
+        const currentBill = pendingExpenses
+          .filter((tx) => {
+            const d = tx.date.getTime()
+            return d >= start.getTime() && d <= end.getTime()
+          })
+          .reduce((sum, tx) => sum + (tx.amount || 0), 0)
+
+        // Limite comprometido = todas as despesas pendentes futuras + atuais
+        const committed = pendingExpenses.reduce((sum, tx) => sum + (tx.amount || 0), 0)
+        const availableLimit = card.limit - committed
+
+        return {
+          ...card,
+          currentBill,
+          availableLimit,
+        }
+      })
+    },
+    [],
+  )
+
   const addTransaction = useCallback(
     async (input: TransactionInput) => {
       // Aguarda um pouco caso o userId ainda esteja sendo inicializado
@@ -310,15 +366,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
       const totalInstallments = input.totalInstallments ?? input.installments ?? 1
       const paidInstallments = Math.min(Math.max(input.paidInstallments ?? 0, 0), totalInstallments)
-      const hasInstallments = totalInstallments > 1
-      const installmentsToCreate = hasInstallments ? totalInstallments - paidInstallments : 1
-
-      if (installmentsToCreate <= 0) {
-        throw new Error('Número de parcelas pagas não pode ser maior ou igual ao total de parcelas.')
-      }
+      if (totalInstallments <= 0) throw new Error('Total de parcelas deve ser maior que zero.')
 
       const purchaseDate = input.purchaseDate ?? input.date ?? new Date()
       const firstInstallmentDate = input.firstInstallmentDate ?? input.date ?? new Date()
+
       const addMonths = (date: Date, months: number) => {
         const d = new Date(date)
         const day = d.getDate()
@@ -329,22 +381,15 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         return d
       }
 
-      const startOfToday = new Date()
-      startOfToday.setHours(0, 0, 0, 0)
-      const baseStart = addMonths(firstInstallmentDate, paidInstallments)
-      const firstFutureDate =
-        baseStart < startOfToday
-          ? addMonths(new Date(startOfToday.getFullYear(), startOfToday.getMonth(), firstInstallmentDate.getDate()), 0)
-          : baseStart
+      // Distribui centavos para evitar perda de valor total
+      const totalCents = Math.round(input.amount * 100)
+      const baseValue = Math.floor(totalCents / totalInstallments)
+      const remainder = totalCents - baseValue * totalInstallments
 
-      const installmentValueCents = Math.round((input.amount / totalInstallments) * 100)
-
-      const payloads = Array.from({ length: installmentsToCreate }, (_, idx) => {
-        const globalIndex = paidInstallments + idx
-        const valueCents = installmentValueCents
-
-        const installmentDate = addMonths(firstFutureDate, idx)
-
+      const payloads = Array.from({ length: totalInstallments }, (_, idx) => {
+        const valueCents = baseValue + (idx < remainder ? 1 : 0)
+        const installmentDate = addMonths(firstInstallmentDate, idx)
+        const isPaid = idx < paidInstallments
         return {
           user_id: userId,
           type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
@@ -357,11 +402,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           account_id: input.accountId || null,
           member_id: input.memberId,
           total_installments: totalInstallments,
-          installment_number: globalIndex + 1,
+          installment_number: idx + 1,
           paid_installments: paidInstallments,
           parent_transaction_id: null,
           is_recurring: input.isRecurring ?? false,
-          status: 'PENDING',
+          status: isPaid ? 'COMPLETED' : 'PENDING',
           notes: null,
         }
       })

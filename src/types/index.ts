@@ -73,6 +73,7 @@ export interface CreditCard {
   holderId: string; // ID do membro titular do cartão
   limit: number; // Limite total do cartão
   currentBill: number; // Fatura atual (gastos do mês)
+  availableLimit?: number; // Limite disponível (derivado)
   closingDay: number; // Dia de fechamento da fatura (1-31)
   dueDay: number; // Dia de vencimento da fatura (1-31)
   theme: CardTheme; // Tema visual do cartão
