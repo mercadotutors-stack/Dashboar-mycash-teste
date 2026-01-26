@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NAVIGATION_ITEMS } from '../../../constants'
 import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
@@ -11,6 +12,49 @@ interface SidebarProps {
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
   const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useFinance()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newType, setNewType] = useState<'family' | 'company' | 'other'>('family')
+  const [isSaving, setIsSaving] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
+
+  const currentWorkspace = useMemo(() => {
+    if (!workspaces.length) return null
+    return workspaces.find((ws) => ws.id === activeWorkspaceId) ?? workspaces[0]
+  }, [workspaces, activeWorkspaceId])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    setIsDropdownOpen(false)
+  }, [activeWorkspaceId])
+
+  const handleCreateWorkspace = async () => {
+    if (!newName.trim()) return
+    try {
+      setIsSaving(true)
+      const id = await createWorkspace({ name: newName.trim(), type: newType })
+      setActiveWorkspace(id)
+      setIsCreating(false)
+      setNewName('')
+      setNewType('family')
+      setIsDropdownOpen(false)
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao criar workspace')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <aside
@@ -69,52 +113,144 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
 
           {/* Navegação (32px abaixo do logo no desktop) */}
           <div className="flex flex-col gap-3 mt-8 w-full">
-            {/* Workspace Switcher no sidebar (estilo card) */}
-            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Icon name="workspace_premium" className="w-5 h-5 text-text-primary" />
-                  <span className="text-sm font-semibold leading-none text-text-primary">Workspaces</span>
-                </div>
+            {/* Workspace Switcher no sidebar (estilo Notion/Drive) */}
+            <div className="flex flex-col gap-3 rounded-[12px] border border-border bg-white p-3 shadow-sm w-full">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-semibold text-[#111827]">Workspaces</span>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const name = prompt('Nome do novo workspace')
-                    if (!name) return
-                    const type = prompt('Tipo (family, company, other)', 'family') || 'family'
-                    try {
-                      const id = await createWorkspace({ name, type })
-                      setActiveWorkspace(id)
-                    } catch (err) {
-                      console.error(err)
-                      alert('Erro ao criar workspace')
-                    }
+                  onClick={() => {
+                    setIsDropdownOpen(true)
+                    setIsCreating(true)
                   }}
-                  className="h-9 px-4 rounded-full border border-border text-sm font-semibold text-text-primary hover:bg-bg-secondary transition flex items-center gap-2"
+                  className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB] transition flex items-center gap-1"
                 >
                   <Icon name="add" className="w-4 h-4" />
-                  <span>Novo</span>
+                  <span>+ Novo</span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 w-full">
-                <Icon name="folder" className="w-4 h-4 text-text-secondary" />
-                <select
-                  value={activeWorkspaceId || ''}
-                  onChange={(e) => setActiveWorkspace(e.target.value)}
-                  disabled={!workspaces.length}
-                  className="h-10 flex-1 rounded-full border border-border bg-bg-primary px-4 text-sm text-text-primary outline-none"
+              {/* Ativo */}
+              <div className="relative w-full" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen((prev) => !prev)}
+                  className="w-full rounded-[10px] border border-transparent bg-[#F9FAFB] px-3 py-2.5 flex items-center justify-between hover:bg-[#F3F4F6] transition"
                 >
-                  {!workspaces.length ? (
-                    <option value="">Nenhum workspace</option>
-                  ) : (
-                    workspaces.map((ws) => (
-                      <option key={ws.id} value={ws.id}>
-                        {ws.name}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
+                      {(currentWorkspace?.name?.[0] ?? 'W').slice(0, 1)}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-[14px] font-medium text-[#111827] leading-tight">
+                        {currentWorkspace?.name ?? 'Nenhum workspace'}
+                      </span>
+                      <span className="text-[12px] text-[#6B7280] leading-tight">
+                        {currentWorkspace?.type ?? 'Selecione ou crie um workspace'}
+                      </span>
+                    </div>
+                  </div>
+                  <Icon
+                    name="chevronDown"
+                    className={`w-4 h-4 text-text-secondary transition ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {/* Dropdown */}
+                {isDropdownOpen ? (
+                  <div className="absolute left-0 right-0 top-full mt-2 rounded-[12px] border border-border bg-white shadow-lg overflow-hidden z-20">
+                    <div className="max-h-72 overflow-auto flex flex-col p-2 gap-1">
+                      {workspaces.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-text-secondary">Nenhum workspace disponível</div>
+                      ) : (
+                        workspaces.map((ws) => {
+                          const isActive = ws.id === activeWorkspaceId
+                          return (
+                            <button
+                              key={ws.id}
+                              onClick={() => {
+                                setActiveWorkspace(ws.id)
+                                setIsDropdownOpen(false)
+                                setIsCreating(false)
+                              }}
+                              className={`
+                                w-full px-3 py-2.5 flex items-center justify-between gap-2 rounded-lg transition
+                                ${isActive ? 'bg-[#EEF2FF]' : 'hover:bg-[#F3F4F6]'}
+                              `}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
+                                  {ws.name.slice(0, 1)}
+                                </div>
+                                <div className="flex flex-col text-left">
+                                  <span className="text-[14px] font-semibold text-[#111827] leading-tight">
+                                    {ws.name}
+                                  </span>
+                                  <span className="text-[12px] text-[#6B7280] leading-tight">{ws.type}</span>
+                                </div>
+                              </div>
+                              {isActive ? <Icon name="check" className="w-5 h-5 text-primary" /> : null}
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+
+                    {/* Criar novo */}
+                    <div className="border-t border-border">
+                      {!isCreating ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsCreating(true)}
+                          className="w-full px-3 py-3 flex items-center gap-2 text-[13px] font-semibold text-[#111827] hover:bg-[#F9FAFB] transition"
+                        >
+                          <Icon name="add" className="w-4 h-4" />
+                          <span>Criar novo workspace</span>
+                        </button>
+                      ) : (
+                        <div className="flex flex-col gap-2 px-3 py-3">
+                          <input
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            placeholder="Nome do workspace"
+                            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                          <select
+                            value={newType}
+                            onChange={(e) => setNewType(e.target.value as 'family' | 'company' | 'other')}
+                            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                          >
+                            <option value="family">Família</option>
+                            <option value="company">Empresa</option>
+                            <option value="other">Outro</option>
+                          </select>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCreating(false)
+                                setNewName('')
+                                setNewType('family')
+                              }}
+                              className="text-sm text-text-secondary hover:text-text-primary transition"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCreateWorkspace}
+                              disabled={isSaving || !newName.trim()}
+                              className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-3 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {isSaving ? 'Salvando...' : 'Salvar'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
