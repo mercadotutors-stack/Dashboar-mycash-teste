@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
 import { ModalWrapper } from '../ui/ModalWrapper'
@@ -12,6 +12,7 @@ type Props = {
   onClose: () => void
   onAddExpense?: (cardId: string) => void
   onEdit?: (cardId: string) => void
+  initialMonthKey?: string
 }
 
 type MonthTab = {
@@ -44,13 +45,19 @@ const getCycleRangeHelper = (closingDay: number, reference: Date) => {
   return { start, end }
 }
 
-export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit }: Props) {
+export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, initialMonthKey }: Props) {
   const { creditCards, transactions, deleteTransaction } = useFinance()
   const [editTxId, setEditTxId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string>('current')
 
   const card = useMemo(() => creditCards.find((c) => c.id === cardId) ?? null, [cardId, creditCards])
+
+  // Se recebeu um mês específico, seleciona-o na abertura
+  useEffect(() => {
+    if (!initialMonthKey) return
+    setSelectedMonth(initialMonthKey)
+  }, [initialMonthKey])
 
   // Gera tabs mensais baseado nos ciclos de fechamento
   const monthTabs = useMemo<MonthTab[]>(() => {
