@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
 import { FilterPopover, FilterModal } from './FilterPopover'
@@ -26,6 +26,10 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
     setDateRange,
     setSelectedMember,
     familyMembers,
+    workspaces,
+    activeWorkspaceId,
+    setActiveWorkspace,
+    createWorkspace,
   } = useFinance()
 
   const [searchValue, setSearchValue] = useState(filters.searchText ?? '')
@@ -100,6 +104,23 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
     setSelectedMember(next)
   }
 
+  const handleWorkspaceChange = async (e: ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    if (val === 'new') {
+      const name = prompt('Nome do novo workspace')
+      if (!name) return
+      const type = prompt('Tipo (family, company, other)', 'family') || 'family'
+      try {
+        await createWorkspace({ name, type })
+      } catch (err) {
+        console.error(err)
+        alert('Erro ao criar workspace')
+      }
+      return
+    }
+    setActiveWorkspace(val || '')
+  }
+
   return (
     <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Esquerda: busca, filtros, período */}
@@ -119,6 +140,23 @@ export function DashboardHeader({ onAddMember, onNewTransaction }: Props) {
               text-base transition-input
             "
           />
+        </div>
+
+        {/* Workspace Switcher */}
+        <div className="flex items-center gap-2">
+          <Icon name="workspace_premium" className="w-5 h-5 text-text-secondary" />
+          <select
+            value={activeWorkspaceId}
+            onChange={handleWorkspaceChange}
+            className="h-11 rounded-full border border-border bg-white px-3 text-sm text-text-primary outline-none"
+          >
+            {workspaces.map((ws) => (
+              <option key={ws.id} value={ws.id}>
+                {ws.name}
+              </option>
+            ))}
+            <option value="new">+ Novo workspace</option>
+          </select>
         </div>
 
         <div className="relative shrink-0" ref={filterRef}>
