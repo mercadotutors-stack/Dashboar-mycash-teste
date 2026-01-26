@@ -38,7 +38,7 @@ const themeStyles: Record<
 }
 
 export function CreditCardsWidget() {
-  const { creditCards, bankAccounts } = useFinance()
+  const { creditCards, bankAccounts, transactions } = useFinance()
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
@@ -151,8 +151,14 @@ export function CreditCardsWidget() {
               end.setHours(23, 59, 59, 999)
               
               // Usa a fatura atual derivada no contexto (já considera pendentes no ciclo)
-              const currentBillAmount = Number(card.currentBill ?? 0)
-              const usage = Math.round((currentBillAmount / card.limit) * 100)
+              // Total pendente em todas as faturas (soma de todas as despesas pendentes do cartão)
+              const pendingTotal = transactions
+                .filter((tx) => tx.accountId === card.id && tx.type === 'expense' && tx.status === 'pending')
+                .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+
+              // Fatura atual (ciclo corrente)
+              // Uso do limite baseado no total pendente (todas as faturas em aberto)
+              const usage = Math.round(((pendingTotal || 0) / card.limit) * 100)
               const billMonth = format(end, 'MMM', { locale: ptBR })
               
               return (
@@ -174,7 +180,7 @@ export function CreditCardsWidget() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-text-secondary truncate">{card.name}</div>
                     <div className="text-2xl font-bold text-text-primary leading-snug">
-                      {formatCurrency(currentBillAmount)}
+                      {formatCurrency(pendingTotal)}
                     </div>
                     <div className="text-sm text-text-secondary">
                       •••• {card.lastDigits || '****'} - {billMonth}

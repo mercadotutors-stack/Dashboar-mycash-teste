@@ -105,6 +105,37 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit }
     return map
   }, [card, transactions, monthTabs])
 
+  // Fatura atual (ciclo corrente) e limite comprometido
+  const { start: currentStart, end: currentEnd } = card
+    ? getCycleRangeHelper(card.closingDay ?? 1, new Date())
+    : { start: new Date(), end: new Date() }
+
+  const pendingExpensesAll = useMemo(() => {
+    if (!card) return 0
+    return transactions
+      .filter((tx) => tx.accountId === card.id && tx.type === 'expense' && tx.status === 'pending')
+      .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+  }, [card, transactions])
+
+  const currentBillAmount = useMemo(() => {
+    if (!card) return 0
+    return transactions
+      .filter(
+        (tx) =>
+          tx.accountId === card.id &&
+          tx.type === 'expense' &&
+          tx.status === 'pending' &&
+          tx.date.getTime() >= currentStart.getTime() &&
+          tx.date.getTime() <= currentEnd.getTime(),
+      )
+      .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+  }, [card, transactions, currentStart, currentEnd])
+
+  const usage = useMemo(() => {
+    if (!card || !card.limit) return 0
+    return Math.max(0, Math.min(100, (pendingExpensesAll / card.limit) * 100))
+  }, [card, pendingExpensesAll])
+
   // Transações do mês selecionado
   const currentExpenses = useMemo(() => {
     return expensesByMonth.get(selectedMonth) || []
@@ -114,7 +145,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit }
     return monthTabs.find((t) => t.monthKey === selectedMonth) || monthTabs[0]
   }, [monthTabs, selectedMonth])
 
-  const usage = card ? (card.currentBill / card.limit) * 100 : 0
+  // uso já calculado acima (pendingExpensesAll/limit)
 
   if (!open || !card) return null
 
@@ -148,12 +179,12 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit }
       <div className="flex-1 overflow-y-auto bg-bg-secondary/60">
         <div className="mx-auto w-full max-w-6xl py-6 flex flex-col gap-6">
           {/* Resumo do Cartão */}
-          <div className="bg-white rounded-xl p-6 flex flex-col gap-6">
+                 <div className="bg-white rounded-xl p-6 flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <InfoCard label="Limite total" value={formatCurrency(card.limit)} />
-              <InfoCard label="Fatura atual" value={formatCurrency(card.currentBill)} />
-              <InfoCard label="Limite disponível" value={formatCurrency(card.availableLimit ?? card.limit - card.currentBill)} />
-              <InfoCard label="Uso do limite" value={`${usage.toFixed(1)}%`} />
+                     <InfoCard label="Limite total" value={formatCurrency(card.limit)} />
+                     <InfoCard label="Fatura atual" value={formatCurrency(currentBillAmount)} />
+                     <InfoCard label="Limite disponível" value={formatCurrency(card.limit - pendingExpensesAll)} />
+                     <InfoCard label="Uso do limite" value={`${usage.toFixed(1)}%`} />
             </div>
 
             <div className="flex flex-col gap-2">
