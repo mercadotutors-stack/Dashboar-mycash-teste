@@ -7,8 +7,6 @@ import { CardDetailsModal } from '../modals/CardDetailsModal'
 import { AddAccountCardModal } from '../modals/AddAccountCardModal'
 import { NewTransactionModal } from '../modals/NewTransactionModal'
 import { formatCurrency } from '../../utils'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 
 type Theme = 'lime' | 'black' | 'white'
 
@@ -159,7 +157,6 @@ export function CreditCardsWidget() {
               // Fatura atual (ciclo corrente)
               // Uso do limite baseado no total pendente (todas as faturas em aberto)
               const usage = Math.round(((pendingTotal || 0) / card.limit) * 100)
-              const billMonth = format(end, 'MMM', { locale: ptBR })
               
               return (
                 <div
@@ -182,9 +179,7 @@ export function CreditCardsWidget() {
                     <div className="text-2xl font-bold text-text-primary leading-snug">
                       {formatCurrency(pendingTotal)}
                     </div>
-                    <div className="text-sm text-text-secondary">
-                      •••• {card.lastDigits || '****'} - {billMonth}
-                    </div>
+                    <div className="text-sm text-text-secondary">•••• {card.lastDigits || '****'}</div>
                   </div>
 
                   <div
