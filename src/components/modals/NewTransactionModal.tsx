@@ -40,7 +40,7 @@ const defaultState: FormState = {
 }
 
 export function NewTransactionModal({ open, onClose, presetAccountId, presetType }: Props) {
-  const { addTransaction, addCategory, bankAccounts, creditCards, familyMembers, transactions } = useFinance()
+  const { addTransaction, addCategory, bankAccounts, creditCards, familyMembers, transactions, categories } = useFinance()
   const [state, setState] = useState<FormState>({ ...defaultState, accountId: presetAccountId ?? '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [toast, setToast] = useState<string | null>(null)
@@ -56,18 +56,26 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
     }
   }, [open, presetAccountId, presetType])
 
+  // Usa categorias do banco de dados, com fallback para categorias das transações
   const categoriesByType = useMemo(() => {
-    const incomeCats = new Set<string>()
-    const expenseCats = new Set<string>()
+    // Primeiro, pega categorias do banco de dados
+    const dbIncomeCats = categories.filter((c) => c.type === 'income').map((c) => c.name)
+    const dbExpenseCats = categories.filter((c) => c.type === 'expense').map((c) => c.name)
+    
+    // Depois, adiciona categorias usadas em transações (para manter compatibilidade)
+    const txIncomeCats = new Set<string>(dbIncomeCats)
+    const txExpenseCats = new Set<string>(dbExpenseCats)
+    
     transactions.forEach((tx) => {
-      if (tx.type === 'income') incomeCats.add(tx.category)
-      if (tx.type === 'expense') expenseCats.add(tx.category)
+      if (tx.type === 'income' && tx.category) txIncomeCats.add(tx.category)
+      if (tx.type === 'expense' && tx.category) txExpenseCats.add(tx.category)
     })
+    
     return {
-      income: incomeCats.size ? Array.from(incomeCats) : ['Salário', 'Investimentos', 'Bônus'],
-      expense: expenseCats.size ? Array.from(expenseCats) : ['Supermercado', 'Transporte', 'Moradia'],
+      income: txIncomeCats.size ? Array.from(txIncomeCats) : ['Salário', 'Investimentos', 'Bônus'],
+      expense: txExpenseCats.size ? Array.from(txExpenseCats) : ['Supermercado', 'Transporte', 'Moradia'],
     }
-  }, [transactions])
+  }, [categories, transactions])
 
   const accountsGrouped = useMemo(() => {
     return {

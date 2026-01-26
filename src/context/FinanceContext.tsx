@@ -149,7 +149,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const [fm, acc, cat, tx] = await Promise.all([
           supabase.from('family_members').select('*'),
           supabase.from('accounts').select('*'),
-          supabase.from('categories').select('*'),
+          supabase.from('categories').select('*').eq('user_id', userId),
           supabase.from('transactions').select('*'),
         ])
 
@@ -625,18 +625,37 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
         }
       }
+      console.log('Criando categoria:', { userId, name: input.name, type: input.type })
+      
       const { data, error } = await supabase
         .from('categories')
         .insert({
           user_id: userId,
-          name: input.name,
+          name: input.name.trim(),
           type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
         })
         .select('*')
         .single()
-      if (error) throw error
+      
+      if (error) {
+        console.error('Erro ao criar categoria:', error)
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        })
+        throw error
+      }
+      
+      console.log('Categoria criada com sucesso:', data)
       const cat: Category = { id: data.id, name: data.name, type: mapType(data.type) }
-      setCategories((prev) => [...prev, cat])
+      setCategories((prev) => {
+        // Verifica se a categoria já existe para evitar duplicatas
+        const exists = prev.some((c) => c.id === cat.id)
+        if (exists) return prev
+        return [...prev, cat]
+      })
       return data.id as string
     },
     [userId],
