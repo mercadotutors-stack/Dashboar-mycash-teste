@@ -11,7 +11,7 @@ type FamilyMemberInput = Omit<FamilyMember, 'id' | 'createdAt' | 'updatedAt'>
 type ExpensesByCategory = Array<{ category: string; total: number }>
 type CategoryPercentage = Array<{ category: string; percentage: number }>
 type Category = { id: string; name: string; type: 'income' | 'expense'; workspaceId?: string }
-type Workspace = { id: string; name: string; type: string; ownerId: string }
+type Workspace = { id: string; name: string; type: string; ownerId: string; avatarUrl?: string | null; subtitle?: string | null }
 
 interface FinanceContextValue {
   userId: string | null // ID do usuário na tabela users (não auth.users)
@@ -29,7 +29,8 @@ interface FinanceContextValue {
   setTransactionType: (type: 'all' | 'income' | 'expense') => void
   setSearchText: (text: string) => void
   setActiveWorkspace: (id: string) => void
-  createWorkspace: (input: { name: string; type?: string }) => Promise<string>
+  createWorkspace: (input: { name: string; type?: string; subtitle?: string | null; avatarUrl?: string | null }) => Promise<string>
+  updateWorkspace: (id: string, input: { name?: string; type?: string; subtitle?: string | null; avatarUrl?: string | null }) => Promise<void>
 
   addTransaction: (input: TransactionInput) => Promise<string>
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>
@@ -198,6 +199,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                 name: 'Família Torso',
                 type: 'family',
                 owner_id: userId,
+                subtitle: 'Workspace padrão',
               },
               { onConflict: 'id' },
             )
@@ -221,6 +223,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                   name: w.name,
                   type: w.type,
                   ownerId: w.owner_id,
+                  avatarUrl: w.avatar_url ?? null,
+                  subtitle: w.subtitle ?? null,
                 },
               ]),
             ).values(),
@@ -1144,14 +1148,53 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           name: input.name,
           type: input.type ?? 'family',
           owner_id: userId,
+          subtitle: input.subtitle ?? null,
+          avatar_url: input.avatarUrl ?? null,
         })
         .select('*')
         .single()
       if (error) throw error
-      const ws: Workspace = { id: data.id, name: data.name, type: data.type, ownerId: data.owner_id }
+      const ws: Workspace = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        ownerId: data.owner_id,
+        subtitle: data.subtitle ?? null,
+        avatarUrl: data.avatar_url ?? null,
+      }
       setWorkspaces((prev) => [...prev, ws])
       setActiveWorkspaceId(data.id)
       return data.id as string
+    },
+    updateWorkspace: async (id, input) => {
+      if (!userId) throw new Error('Usuário não autenticado')
+      const payload: any = {}
+      if (input.name !== undefined) payload.name = input.name
+      if (input.type !== undefined) payload.type = input.type
+      if (input.subtitle !== undefined) payload.subtitle = input.subtitle
+      if (input.avatarUrl !== undefined) payload.avatar_url = input.avatarUrl
+
+      const { data, error } = await supabase
+        .from('workspaces')
+        .update(payload)
+        .eq('id', id)
+        .eq('owner_id', userId)
+        .select('*')
+        .maybeSingle()
+      if (error) throw error
+      setWorkspaces((prev) =>
+        prev.map((w) =>
+          w.id === id
+            ? {
+                ...w,
+                name: data?.name ?? w.name,
+                type: data?.type ?? w.type,
+                subtitle: data?.subtitle ?? w.subtitle,
+                avatarUrl: data?.avatar_url ?? w.avatarUrl,
+              }
+            : w,
+        ),
+      )
     },
     addTransaction,
     updateTransaction,

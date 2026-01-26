@@ -5,6 +5,7 @@ import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
 import { ModalWrapper } from '../../ui/ModalWrapper'
 import { useFinance } from '../../../context/FinanceContext'
+import { uploadImage } from '../../../lib/uploadImage'
 
 interface SidebarProps {
   isExpanded: boolean
@@ -12,12 +13,21 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
-  const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useFinance()
+  const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace, updateWorkspace, userId } = useFinance()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingWsId, setEditingWsId] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const [newType, setNewType] = useState<'family' | 'company' | 'other'>('family')
+  const [newSubtitle, setNewSubtitle] = useState('')
+  const [editName, setEditName] = useState('')
+  const [editType, setEditType] = useState<'family' | 'company' | 'other'>('family')
+  const [editSubtitle, setEditSubtitle] = useState('')
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null)
+  const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
   const currentWorkspace = useMemo(() => {
@@ -36,24 +46,69 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
   }, [])
 
   useEffect(() => {
-    setIsDropdownOpen(false)
+      setIsDropdownOpen(false)
   }, [activeWorkspaceId])
 
   const handleCreateWorkspace = async () => {
     if (!newName.trim()) return
     try {
       setIsSaving(true)
-      const id = await createWorkspace({ name: newName.trim(), type: newType })
+      const id = await createWorkspace({ name: newName.trim(), type: newType, subtitle: newSubtitle.trim() || undefined })
       setActiveWorkspace(id)
       setShowCreateModal(false)
       setNewName('')
       setNewType('family')
+      setNewSubtitle('')
       setIsDropdownOpen(false)
     } catch (err) {
       console.error(err)
       alert('Erro ao criar workspace')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleOpenEdit = (workspaceId: string) => {
+    const ws = workspaces.find((w) => w.id === workspaceId)
+    if (!ws) return
+    setEditingWsId(ws.id)
+    setEditName(ws.name)
+    setEditType((ws.type as 'family' | 'company' | 'other') || 'family')
+    setEditSubtitle(ws.subtitle ?? '')
+    setEditAvatarFile(null)
+    setEditAvatarPreview(ws.avatarUrl ?? null)
+    setShowEditModal(true)
+    setIsDropdownOpen(false)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingWsId) return
+    if (!editName.trim()) return
+    try {
+      setIsSavingEdit(true)
+      let avatarUrl = editAvatarPreview ?? null
+      if (editAvatarFile) {
+        if (!userId) throw new Error('Usuário não autenticado')
+        const uploaded = await uploadImage(editAvatarFile, userId, `workspace-${editingWsId}`)
+        if (uploaded) {
+          avatarUrl = uploaded
+          setEditAvatarPreview(uploaded)
+        }
+      }
+      await updateWorkspace(editingWsId, {
+        name: editName.trim(),
+        type: editType,
+        subtitle: editSubtitle.trim() || null,
+        avatarUrl,
+      })
+      setShowEditModal(false)
+      setEditingWsId(null)
+      setEditAvatarFile(null)
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao salvar workspace')
+    } finally {
+      setIsSavingEdit(false)
     }
   }
 
@@ -133,22 +188,30 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
               </div>
 
               {/* Ativo */}
-              <div className="relative w-full" ref={dropdownRef}>
+              <div className="relative w-full group" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen((prev) => !prev)}
                   className="w-full rounded-[10px] border border-transparent bg-[#F9FAFB] px-3 py-2.5 flex items-center justify-between hover:bg-[#F3F4F6] transition"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
-                      {(currentWorkspace?.name?.[0] ?? 'W').slice(0, 1)}
-                    </div>
+                    {currentWorkspace?.avatarUrl ? (
+                      <img
+                        src={currentWorkspace.avatarUrl}
+                        alt={currentWorkspace.name}
+                        className="w-8 h-8 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
+                        {(currentWorkspace?.name?.[0] ?? 'W').slice(0, 1)}
+                      </div>
+                    )}
                     <div className="flex flex-col text-left">
                       <span className="text-[14px] font-medium text-[#111827] leading-tight">
                         {currentWorkspace?.name ?? 'Nenhum workspace'}
                       </span>
                       <span className="text-[12px] text-[#6B7280] leading-tight">
-                        {currentWorkspace?.type ?? 'Selecione ou crie um workspace'}
+                        {currentWorkspace?.subtitle ?? currentWorkspace?.type ?? 'Selecione ou crie um workspace'}
                       </span>
                     </div>
                   </div>
@@ -157,6 +220,16 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                     className={`w-4 h-4 text-text-secondary transition ${isDropdownOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
+                {/* botão lápis hover */}
+                {currentWorkspace ? (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(currentWorkspace.id)}
+                    className="hidden group-hover:flex absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white border border-border shadow-sm hover:bg-gray-50 transition"
+                  >
+                    <Icon name="edit" className="w-4 h-4 text-text-secondary" />
+                  </button>
+                ) : null}
 
                 {/* Dropdown */}
                 {isDropdownOpen ? (
@@ -175,22 +248,38 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                                 setIsDropdownOpen(false)
                               }}
                               className={`
-                                w-full px-3 py-2.5 flex items-center justify-between gap-2 rounded-lg transition
+                                relative group w-full px-3 py-2.5 flex items-center justify-between gap-2 rounded-lg transition
                                 ${isActive ? 'bg-[#EEF2FF]' : 'hover:bg-[#F3F4F6]'}
                               `}
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
-                                  {ws.name.slice(0, 1)}
-                                </div>
+                                {ws.avatarUrl ? (
+                                  <img src={ws.avatarUrl} alt={ws.name} className="w-10 h-10 rounded-lg object-cover" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
+                                    {ws.name.slice(0, 1)}
+                                  </div>
+                                )}
                                 <div className="flex flex-col text-left">
                                   <span className="text-[14px] font-semibold text-[#111827] leading-tight">
                                     {ws.name}
                                   </span>
-                                  <span className="text-[12px] text-[#6B7280] leading-tight">{ws.type}</span>
+                                  <span className="text-[12px] text-[#6B7280] leading-tight">
+                                    {ws.subtitle ?? ws.type}
+                                  </span>
                                 </div>
                               </div>
                               {isActive ? <Icon name="check" className="w-5 h-5 text-primary" /> : null}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleOpenEdit(ws.id)
+                                }}
+                                className="hidden group-hover:flex absolute right-2 top-2 h-7 w-7 items-center justify-center rounded-full bg-white border border-border shadow-sm hover:bg-gray-50 transition"
+                              >
+                                <Icon name="edit" className="w-4 h-4 text-text-secondary" />
+                              </button>
                             </button>
                           )
                         })
@@ -249,6 +338,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           setShowCreateModal(false)
           setNewName('')
           setNewType('family')
+          setNewSubtitle('')
         }}
         className="items-start justify-center"
       >
@@ -279,6 +369,16 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Família Torso"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-text-primary">Legenda</span>
+              <input
+                value={newSubtitle}
+                onChange={(e) => setNewSubtitle(e.target.value)}
+                placeholder="Workspace padrão"
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </label>
@@ -317,6 +417,126 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
               className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Criando...' : 'Criar workspace'}
+            </button>
+          </div>
+        </div>
+      </ModalWrapper>
+
+      {/* Modal de edição de workspace */}
+      <ModalWrapper
+        open={showEditModal}
+        onClose={() => {
+          if (isSavingEdit) return
+          setShowEditModal(false)
+          setEditingWsId(null)
+          setEditAvatarFile(null)
+        }}
+        className="items-start justify-center"
+      >
+        <div className="w-full h-full bg-white overflow-auto px-4 py-6 sm:px-8 sm:py-10 flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <h2 className="text-heading-lg font-semibold text-text-primary">Editar workspace</h2>
+              <p className="text-sm text-text-secondary">Atualize avatar, nome e legenda.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (isSavingEdit) return
+                setShowEditModal(false)
+                setEditingWsId(null)
+                setEditAvatarFile(null)
+              }}
+              className="text-sm text-text-secondary hover:text-text-primary transition"
+            >
+              Fechar
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-3">
+              <span className="text-sm font-medium text-text-primary">Avatar</span>
+              <div className="flex items-center gap-3">
+                {editAvatarPreview ? (
+                  <img src={editAvatarPreview} alt="avatar" className="w-14 h-14 rounded-xl object-cover border border-border" />
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
+                    {editName?.[0] ?? 'W'}
+                  </div>
+                )}
+                <label className="text-sm font-semibold text-primary cursor-pointer hover:underline">
+                  Alterar foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setEditAvatarFile(file)
+                        const preview = URL.createObjectURL(file)
+                        setEditAvatarPreview(preview)
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-text-primary">Nome</span>
+              <input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Família Torso"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-text-primary">Legenda</span>
+              <input
+                value={editSubtitle}
+                onChange={(e) => setEditSubtitle(e.target.value)}
+                placeholder="Workspace padrão"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-text-primary">Tipo</span>
+              <select
+                value={editType}
+                onChange={(e) => setEditType(e.target.value as 'family' | 'company' | 'other')}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="family">Família</option>
+                <option value="company">Empresa</option>
+                <option value="other">Outro</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (isSavingEdit) return
+                setShowEditModal(false)
+                setEditingWsId(null)
+                setEditAvatarFile(null)
+              }}
+              className="text-sm text-text-secondary hover:text-text-primary transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              disabled={isSavingEdit || !editName.trim()}
+              className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSavingEdit ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </div>

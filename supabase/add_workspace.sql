@@ -18,6 +18,8 @@ begin
     id uuid primary key default uuid_generate_v4(),
     name text not null,
     type text not null default 'family',
+    subtitle text,
+    avatar_url text,
     owner_id uuid not null references users(id) on delete cascade,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
@@ -29,8 +31,8 @@ begin
   create policy "public_all_workspaces" on workspaces for all using (true) with check (true);
 
   -- Workspace padrão
-  insert into workspaces (id, name, type, owner_id)
-  values (v_default_workspace, 'Família Torso', 'family', v_owner)
+  insert into workspaces (id, name, type, subtitle, owner_id)
+  values (v_default_workspace, 'Família Torso', 'family', 'Workspace padrão', v_owner)
   on conflict (id) do nothing;
 
   -- Adiciona workspace_id nas tabelas principais
@@ -54,3 +56,7 @@ begin
   update transactions set workspace_id = v_default_workspace where workspace_id is null;
   update recurring_transactions set workspace_id = v_default_workspace where workspace_id is null;
 end $$;
+
+-- Garante colunas opcionais em execuções futuras
+alter table if exists workspaces add column if not exists subtitle text;
+alter table if exists workspaces add column if not exists avatar_url text;
