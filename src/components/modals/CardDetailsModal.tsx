@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
 import { Icon } from '../ui/Icon'
 import { ModalWrapper } from '../ui/ModalWrapper'
+import { EditTransactionModal } from '../modals/EditTransactionModal'
+import { Toast } from '../ui/Toast'
 import { formatCurrency, formatDate as formatDateUtil } from '../../utils'
 
 type Props = {
@@ -14,8 +16,10 @@ type Props = {
 }
 
 export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, onViewStatement }: Props) {
-  const { creditCards, transactions } = useFinance()
+  const { creditCards, transactions, deleteTransaction } = useFinance()
   const [page, setPage] = useState(1)
+  const [editTxId, setEditTxId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
   const PAGE_SIZE = 10
 
   const card = useMemo(() => creditCards.find((c) => c.id === cardId) ?? null, [cardId, creditCards])
@@ -67,7 +71,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <InfoCard label="Limite total" value={formatCurrency(card.limit)} />
               <InfoCard label="Fatura atual" value={formatCurrency(card.currentBill)} />
-              <InfoCard label="Limite disponível" value={formatCurrency(card.limit - card.currentBill)} />
+              <InfoCard label="Limite disponível" value={formatCurrency(card.availableLimit ?? card.limit - card.currentBill)} />
               <InfoCard label="Uso do limite" value={`${usage.toFixed(1)}%`} />
               <InfoCard label="Fechamento" value={`Dia ${card.closingDay}`} />
               <InfoCard label="Vencimento" value={`Dia ${card.dueDay}`} />
@@ -87,12 +91,13 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
 
             {/* Tabela */}
             <div className="rounded-xl border border-border overflow-hidden">
-              <div className="grid grid-cols-[120px,1.2fr,1fr,120px,140px] bg-gray-50 text-text-primary font-semibold text-body">
+              <div className="grid grid-cols-[120px,1.2fr,1fr,120px,140px,100px] bg-gray-50 text-text-primary font-semibold text-body">
                 <div className="px-4 py-3">Data</div>
                 <div className="px-4 py-3">Descrição</div>
                 <div className="px-4 py-3">Categoria</div>
                 <div className="px-4 py-3">Parcelas</div>
                 <div className="px-4 py-3 text-right">Valor</div>
+                <div className="px-4 py-3 text-center">Ações</div>
               </div>
               {paginated.length === 0 ? (
                 <div className="py-10 text-center text-text-secondary">Nenhuma despesa registrada neste cartão ainda.</div>
@@ -100,7 +105,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
                 paginated.map((tx, idx) => (
                   <div
                     key={tx.id}
-                    className={`grid grid-cols-[120px,1.2fr,1fr,120px,140px] items-center px-2 py-3 ${
+                    className={`grid grid-cols-[120px,1.2fr,1fr,120px,140px,100px] items-center px-2 py-3 ${
                       idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'
                     }`}
                   >
@@ -108,11 +113,43 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
                       {formatDateUtil(tx.date)}
                     </div>
                     <div className="px-2 text-text-primary">{tx.description}</div>
-                    <div className="px-2 text-text-secondary text-sm">{tx.category}</div>
+                    <div className="px-2 text-text-secondary text-sm">{tx.category || 'Sem categoria'}</div>
                     <div className="px-2 text-text-secondary text-sm">
-                      {tx.installments && tx.installments > 1 ? `${tx.installments}x` : 'À vista'}
+                      {tx.totalInstallments && tx.totalInstallments > 1
+                        ? `${tx.currentInstallment ?? 1}/${tx.totalInstallments}`
+                        : 'À vista'}
                     </div>
                     <div className="px-2 text-right font-semibold text-text-primary">{formatCurrency(tx.amount)}</div>
+                    <div className="px-2 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setEditTxId(tx.id)}
+                        className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-blue-50 hover:border-blue-500 transition-button"
+                        aria-label="Editar transação"
+                        title="Editar"
+                      >
+                        <Icon name="edit" className="w-4 h-4 text-blue-600" />
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm('Tem certeza que deseja excluir esta transação?')) {
+                            try {
+                              await deleteTransaction(tx.id)
+                              setToast('Transação excluída com sucesso!')
+                              setTimeout(() => setToast(null), 2000)
+                            } catch (err) {
+                              console.error('Erro ao excluir transação:', err)
+                              setToast('Erro ao excluir transação. Verifique o console.')
+                              setTimeout(() => setToast(null), 3000)
+                            }
+                          }
+                        }}
+                        className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-red-50 hover:border-red-500 transition-button"
+                        aria-label="Excluir transação"
+                        title="Excluir"
+                      >
+                        <Icon name="delete" className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -177,6 +214,9 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
           Fechar
         </button>
       </footer>
+
+      <EditTransactionModal open={!!editTxId} onClose={() => setEditTxId(null)} transactionId={editTxId ?? undefined} />
+      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
     </ModalWrapper>
   )
 }

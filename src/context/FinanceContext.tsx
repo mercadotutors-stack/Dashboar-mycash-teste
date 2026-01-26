@@ -438,10 +438,15 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updatedAt: toDate(row.updated_at),
       }))
 
-      setTransactions((prev) => [...prev, ...mapped])
+      setTransactions((prev) => {
+        const updated = [...prev, ...mapped]
+        // Recalcula cartões com as novas transações
+        setCreditCards((prevCards) => deriveCreditCards(prevCards, updated))
+        return updated
+      })
       return mapped[0]?.id as string
     },
-    [userId],
+    [userId, deriveCreditCards],
   )
 
   const updateTransaction = useCallback(
@@ -468,8 +473,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (error) throw error
       
       // Atualiza o estado local
-      setTransactions((prev) =>
-        prev.map((tx) => {
+      setTransactions((prev) => {
+        const updated = prev.map((tx) => {
           if (tx.id === id) {
             return {
               ...tx,
@@ -480,9 +485,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           }
           return tx
         })
-      )
+        // Recalcula cartões após atualizar transação
+        setCreditCards((prevCards) => deriveCreditCards(prevCards, updated))
+        return updated
+      })
     },
-    [userId],
+    [userId, deriveCreditCards],
   )
 
   const addFamilyMember = useCallback(
@@ -781,9 +789,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
       const { error } = await supabase.from('transactions').delete().eq('id', id)
       if (error) throw error
-      setTransactions((prev) => prev.filter((tx) => tx.id !== id))
+      setTransactions((prev) => {
+        const updated = prev.filter((tx) => tx.id !== id)
+        // Recalcula cartões após excluir transação
+        setCreditCards((prevCards) => deriveCreditCards(prevCards, updated))
+        return updated
+      })
     },
-    [userId],
+    [userId, deriveCreditCards],
   )
 
   const updateCreditCard = useCallback(
