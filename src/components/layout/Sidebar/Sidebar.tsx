@@ -4,7 +4,6 @@ import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
 import { useFinance } from '../../../context/FinanceContext'
-import { uploadImage } from '../../../lib/uploadImage'
 import { ModalWrapper } from '../../ui/ModalWrapper'
 
 interface SidebarProps {
@@ -13,22 +12,20 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, toggle }: SidebarProps) {
-  const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace, updateWorkspace, userId } = useFinance()
+  const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace, updateWorkspace } = useFinance()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [editingWsId, setEditingWsId] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
   const [newType, setNewType] = useState<'family' | 'company' | 'other'>('family')
   const [newSubtitle, setNewSubtitle] = useState('')
-  const [editName, setEditName] = useState('')
-  const [editType, setEditType] = useState<'family' | 'company' | 'other'>('family')
-  const [editSubtitle, setEditSubtitle] = useState('')
-  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null)
-  const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [editingName, setEditingName] = useState<string | null>(null)
+  const [editingType, setEditingType] = useState<string | null>(null)
+  const [tempName, setTempName] = useState('')
+  const [tempType, setTempType] = useState<'family' | 'company' | 'other'>('family')
   const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const nameInputRef = useRef<HTMLInputElement | null>(null)
+  const typeInputRef = useRef<HTMLSelectElement | null>(null)
 
   const currentWorkspace = useMemo(() => {
     if (!workspaces.length) return null
@@ -68,47 +65,43 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
     }
   }
 
-  const handleOpenEdit = (workspaceId: string) => {
+  const handleStartEditName = (workspaceId: string) => {
     const ws = workspaces.find((w) => w.id === workspaceId)
     if (!ws) return
-    setEditingWsId(ws.id)
-    setEditName(ws.name)
-    setEditType((ws.type as 'family' | 'company' | 'other') || 'family')
-    setEditSubtitle(ws.subtitle ?? '')
-    setEditAvatarFile(null)
-    setEditAvatarPreview(ws.avatarUrl ?? null)
-    setShowEditModal(true)
-    setIsDropdownOpen(false)
+    setEditingName(workspaceId)
+    setTempName(ws.name)
+    setTimeout(() => nameInputRef.current?.focus(), 10)
   }
 
-  const handleSaveEdit = async () => {
-    if (!editingWsId) return
-    if (!editName.trim()) return
+  const handleSaveName = async (workspaceId: string) => {
+    if (!tempName.trim()) {
+      setEditingName(null)
+      return
+    }
     try {
-      setIsSavingEdit(true)
-      let avatarUrl = editAvatarPreview ?? null
-      if (editAvatarFile) {
-        if (!userId) throw new Error('Usuário não autenticado')
-        const uploaded = await uploadImage(editAvatarFile, userId, `workspace-${editingWsId}`)
-        if (uploaded) {
-          avatarUrl = uploaded
-          setEditAvatarPreview(uploaded)
-        }
-      }
-      await updateWorkspace(editingWsId, {
-        name: editName.trim(),
-        type: editType,
-        subtitle: editSubtitle.trim() || null,
-        avatarUrl,
-      })
-      setShowEditModal(false)
-      setEditingWsId(null)
-      setEditAvatarFile(null)
+      await updateWorkspace(workspaceId, { name: tempName.trim() })
+      setEditingName(null)
     } catch (err) {
       console.error(err)
-      alert('Erro ao salvar workspace')
-    } finally {
-      setIsSavingEdit(false)
+      alert('Erro ao salvar nome')
+    }
+  }
+
+  const handleStartEditType = (workspaceId: string) => {
+    const ws = workspaces.find((w) => w.id === workspaceId)
+    if (!ws) return
+    setEditingType(workspaceId)
+    setTempType((ws.type as 'family' | 'company' | 'other') || 'family')
+    setTimeout(() => typeInputRef.current?.focus(), 10)
+  }
+
+  const handleSaveType = async (workspaceId: string) => {
+    try {
+      await updateWorkspace(workspaceId, { type: tempType })
+      setEditingType(null)
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao salvar tipo')
     }
   }
 
@@ -206,13 +199,71 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                         {(currentWorkspace?.name?.[0] ?? 'W').slice(0, 1)}
                       </div>
                     )}
-                    <div className="flex flex-col text-left">
-                      <span className="text-[14px] font-medium text-[#111827] leading-tight">
-                        {currentWorkspace?.name ?? 'Nenhum workspace'}
-                      </span>
-                      <span className="text-[12px] text-[#6B7280] leading-tight">
-                        {currentWorkspace?.subtitle ?? currentWorkspace?.type ?? 'Selecione ou crie um workspace'}
-                      </span>
+                    <div className="flex flex-col text-left flex-1 min-w-0">
+                      {editingName === currentWorkspace?.id ? (
+                        <input
+                          ref={nameInputRef}
+                          value={tempName}
+                          onChange={(e) => setTempName(e.target.value)}
+                          onBlur={() => {
+                            if (currentWorkspace) handleSaveName(currentWorkspace.id)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && currentWorkspace) {
+                              handleSaveName(currentWorkspace.id)
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingName(null)
+                            }
+                          }}
+                          className="text-[14px] font-medium text-[#111827] leading-tight bg-white border border-primary rounded px-2 py-1 outline-none"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span
+                          className="text-[14px] font-medium text-[#111827] leading-tight cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (currentWorkspace) handleStartEditName(currentWorkspace.id)
+                          }}
+                        >
+                          {currentWorkspace?.name ?? 'Nenhum workspace'}
+                        </span>
+                      )}
+                      {editingType === currentWorkspace?.id ? (
+                        <select
+                          ref={typeInputRef}
+                          value={tempType}
+                          onChange={(e) => setTempType(e.target.value as 'family' | 'company' | 'other')}
+                          onBlur={() => {
+                            if (currentWorkspace) handleSaveType(currentWorkspace.id)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && currentWorkspace) {
+                              handleSaveType(currentWorkspace.id)
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingType(null)
+                            }
+                          }}
+                          className="text-[12px] text-[#6B7280] leading-tight bg-white border border-primary rounded px-2 py-1 outline-none mt-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="family">Família</option>
+                          <option value="company">Empresa</option>
+                          <option value="other">Outro</option>
+                        </select>
+                      ) : (
+                        <span
+                          className="text-[12px] text-[#6B7280] leading-tight cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (currentWorkspace) handleStartEditType(currentWorkspace.id)
+                          }}
+                        >
+                          {currentWorkspace?.subtitle ?? currentWorkspace?.type ?? 'Selecione ou crie um workspace'}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <Icon
@@ -220,16 +271,6 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                     className={`w-4 h-4 text-text-secondary transition ${isDropdownOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
-                {/* botão lápis hover */}
-                {currentWorkspace ? (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(currentWorkspace.id)}
-                    className="hidden group-hover:flex absolute right-2 top-2 h-8 w-8 items-center justify-center rounded-full bg-white border border-border shadow-sm hover:bg-gray-50 transition"
-                  >
-                    <Icon name="edit" className="w-4 h-4 text-text-secondary" />
-                  </button>
-                ) : null}
 
                 {/* Dropdown */}
                 {isDropdownOpen ? (
@@ -260,26 +301,68 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                                     {ws.name.slice(0, 1)}
                                   </div>
                                 )}
-                                <div className="flex flex-col text-left">
-                                  <span className="text-[14px] font-semibold text-[#111827] leading-tight">
-                                    {ws.name}
-                                  </span>
-                                  <span className="text-[12px] text-[#6B7280] leading-tight">
-                                    {ws.subtitle ?? ws.type}
-                                  </span>
+                                <div className="flex flex-col text-left flex-1 min-w-0">
+                                  {editingName === ws.id ? (
+                                    <input
+                                      value={tempName}
+                                      onChange={(e) => setTempName(e.target.value)}
+                                      onBlur={() => handleSaveName(ws.id)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleSaveName(ws.id)
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingName(null)
+                                        }
+                                      }}
+                                      className="text-[14px] font-semibold text-[#111827] leading-tight bg-white border border-primary rounded px-2 py-1 outline-none"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  ) : (
+                                    <span
+                                      className="text-[14px] font-semibold text-[#111827] leading-tight cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleStartEditName(ws.id)
+                                      }}
+                                    >
+                                      {ws.name}
+                                    </span>
+                                  )}
+                                  {editingType === ws.id ? (
+                                    <select
+                                      value={tempType}
+                                      onChange={(e) => setTempType(e.target.value as 'family' | 'company' | 'other')}
+                                      onBlur={() => handleSaveType(ws.id)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleSaveType(ws.id)
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingType(null)
+                                        }
+                                      }}
+                                      className="text-[12px] text-[#6B7280] leading-tight bg-white border border-primary rounded px-2 py-1 outline-none mt-1"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <option value="family">Família</option>
+                                      <option value="company">Empresa</option>
+                                      <option value="other">Outro</option>
+                                    </select>
+                                  ) : (
+                                    <span
+                                      className="text-[12px] text-[#6B7280] leading-tight cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleStartEditType(ws.id)
+                                      }}
+                                    >
+                                      {ws.subtitle ?? ws.type}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               {isActive ? <Icon name="check" className="w-5 h-5 text-primary" /> : null}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleOpenEdit(ws.id)
-                                }}
-                                className="hidden group-hover:flex absolute right-2 top-2 h-7 w-7 items-center justify-center rounded-full bg-white border border-border shadow-sm hover:bg-gray-50 transition"
-                              >
-                                <Icon name="edit" className="w-4 h-4 text-text-secondary" />
-                              </button>
                             </button>
                           )
                         })
@@ -428,138 +511,6 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
             className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSaving ? 'Criando...' : 'Criar workspace'}
-          </button>
-        </footer>
-      </ModalWrapper>
-
-      {/* Modal de edição de workspace (padrão igual transação) */}
-      <ModalWrapper
-        open={showEditModal}
-        onClose={() => {
-          if (isSavingEdit) return
-          setShowEditModal(false)
-          setEditingWsId(null)
-          setEditAvatarFile(null)
-        }}
-        className="w-full h-full bg-white flex flex-col"
-      >
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-text-primary overflow-hidden">
-              {editAvatarPreview ? (
-                <img src={editAvatarPreview} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <Icon name="workspace_premium" className="w-7 h-7" />
-              )}
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-heading-xl font-bold text-text-primary">Editar workspace</h2>
-              <p className="text-text-secondary text-sm">Atualize avatar, nome e legenda.</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (isSavingEdit) return
-              setShowEditModal(false)
-              setEditingWsId(null)
-              setEditAvatarFile(null)
-            }}
-            className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
-            aria-label="Fechar modal"
-          >
-            <Icon name="close" className="w-6 h-6 text-text-primary" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-4">
-          <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
-            <div className="flex flex-col gap-3">
-              <span className="text-sm font-semibold text-text-primary">Avatar</span>
-              <div className="flex items-center gap-3">
-                {editAvatarPreview ? (
-                  <img src={editAvatarPreview} alt="avatar" className="w-16 h-16 rounded-xl object-cover border border-border" />
-                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-[#E5E7EB] flex items-center justify-center text-base font-semibold text-[#111827] uppercase">
-                    {editName?.[0] ?? 'W'}
-                  </div>
-                )}
-                <label className="text-sm font-semibold text-primary cursor-pointer hover:underline">
-                  Alterar foto
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        setEditAvatarFile(file)
-                        const preview = URL.createObjectURL(file)
-                        setEditAvatarPreview(preview)
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-text-primary">Nome</span>
-                <input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Família Torso"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-text-primary">Legenda</span>
-                <input
-                  value={editSubtitle}
-                  onChange={(e) => setEditSubtitle(e.target.value)}
-                  placeholder="Workspace padrão"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-text-primary">Tipo</span>
-                <select
-                  value={editType}
-                  onChange={(e) => setEditType(e.target.value as 'family' | 'company' | 'other')}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="family">Família</option>
-                  <option value="company">Empresa</option>
-                  <option value="other">Outro</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <footer className="sticky bottom-0 border-t border-border bg-white px-6 py-4 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (isSavingEdit) return
-              setShowEditModal(false)
-              setEditingWsId(null)
-              setEditAvatarFile(null)
-            }}
-            className="text-sm text-text-secondary hover:text-text-primary transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveEdit}
-            disabled={isSavingEdit || !editName.trim()}
-            className="text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSavingEdit ? 'Salvando...' : 'Salvar'}
           </button>
         </footer>
       </ModalWrapper>
