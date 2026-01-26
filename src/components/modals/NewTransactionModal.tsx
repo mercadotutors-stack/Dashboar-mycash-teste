@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
+import { useFeedback } from '../../context/FeedbackContext'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
 import type { TransactionType } from '../../types'
@@ -50,6 +51,7 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
   const [state, setState] = useState<FormState>({ ...defaultState, accountId: presetAccountId ?? '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [toast, setToast] = useState<string | null>(null)
+  const { show } = useFeedback()
 
   useEffect(() => {
     if (open) {
@@ -167,6 +169,7 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
         isPaid: false,
       })
       setToast('Transação registrada com sucesso!')
+      show('Transação salva com sucesso', 'success')
       setTimeout(() => setToast(null), 2000)
       // Pequeno delay para garantir que o estado seja atualizado antes de fechar
       setTimeout(() => {
@@ -176,6 +179,7 @@ export function NewTransactionModal({ open, onClose, presetAccountId, presetType
       console.error('Erro ao adicionar transação:', err)
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar transação. Verifique o console.'
       setToast(`Erro: ${errorMessage}`)
+      show(errorMessage, 'error', 4000)
       setTimeout(() => setToast(null), 4000)
     }
   }

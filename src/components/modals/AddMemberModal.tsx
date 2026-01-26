@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
+import { useFeedback } from '../../context/FeedbackContext'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
 import { ModalWrapper } from '../ui/ModalWrapper'
@@ -23,6 +24,7 @@ export function AddMemberModal({ open, onClose }: Props) {
   const [toast, setToast] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
+  const { show } = useFeedback()
 
   useEffect(() => {
     if (open) {
@@ -83,12 +85,14 @@ export function AddMemberModal({ open, onClose }: Props) {
         avatarUrl: avatarUrl || undefined,
       })
       setToast('Membro adicionado com sucesso!')
+      show('Membro adicionado', 'success')
       setTimeout(() => setToast(null), 2000)
       onClose()
     } catch (err) {
       console.error('Erro ao adicionar membro:', err)
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar membro. Verifique o console.'
       setToast(`Erro: ${errorMessage}`)
+      show(errorMessage, 'error', 4000)
       setTimeout(() => setToast(null), 4000)
     }
   }

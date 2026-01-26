@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useFinance } from '../../context/FinanceContext'
+import { useFeedback } from '../../context/FeedbackContext'
 import { Icon } from '../ui/Icon'
 import { CurrencyInput } from '../ui/CurrencyInput'
 import { ModalWrapper } from '../ui/ModalWrapper'
@@ -31,6 +32,7 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
   const [currentInstallment, setCurrentInstallment] = useState<number>(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [toast, setToast] = useState<string | null>(null)
+  const { show } = useFeedback()
 
   useEffect(() => {
     if (open && transaction) {
@@ -109,12 +111,14 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
         memberId,
       })
       setToast('Transação atualizada com sucesso!')
+      show('Transação atualizada', 'success')
       setTimeout(() => setToast(null), 2000)
       onClose()
     } catch (err) {
       console.error('Erro ao atualizar transação:', err)
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar transação. Verifique o console.'
       setToast(`Erro: ${errorMessage}`)
+      show(errorMessage, 'error', 4000)
       setTimeout(() => setToast(null), 4000)
     }
   }
@@ -128,12 +132,14 @@ export function EditTransactionModal({ open, onClose, transactionId }: Props) {
     try {
       await deleteTransaction(transaction.id)
       setToast('Transação excluída com sucesso!')
+      show('Transação excluída', 'success')
       setTimeout(() => setToast(null), 2000)
       onClose()
     } catch (err) {
       console.error('Erro ao excluir transação:', err)
       const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir transação. Verifique o console.'
       setToast(`Erro: ${errorMessage}`)
+      show(errorMessage, 'error', 4000)
       setTimeout(() => setToast(null), 4000)
     }
   }
