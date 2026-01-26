@@ -3,6 +3,7 @@ import { DashboardHeader } from '../components/dashboard/DashboardHeader'
 import { SummaryCards } from '../components/dashboard/SummaryCards'
 import { ExpensesByCategoryCarousel } from '../components/dashboard/ExpensesByCategoryCarousel'
 import { FinancialFlowChart } from '../components/dashboard/FinancialFlowChart'
+import { InvestmentChart } from '../components/dashboard/InvestmentChart'
 import { CreditCardsWidget } from '../components/dashboard/CreditCardsWidget'
 import { UpcomingExpensesWidget } from '../components/dashboard/UpcomingExpensesWidget'
 import { TransactionsTable } from '../components/dashboard/TransactionsTable'
@@ -33,29 +34,32 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] gap-6 sm:gap-8">
-          <div className="flex flex-col gap-6 sm:gap-8">
-            <div className="animate-slide-up" style={{ animationDelay: '50ms' }}>
-              <SummaryCards />
-            </div>
-            <div className="animate-slide-up" style={{ animationDelay: '150ms' }}>
-              <ExpensesByCategoryCarousel />
-            </div>
-            <div className="animate-slide-up" style={{ animationDelay: '250ms' }}>
-              <FinancialFlowChart />
-            </div>
-          </div>
-          <div className="flex flex-col gap-6 sm:gap-8">
-            <div className="animate-slide-up" style={{ animationDelay: '100ms' }}>
-              <CreditCardsWidget />
-            </div>
-            <div className="animate-slide-up" style={{ animationDelay: '200ms' }}>
-              <UpcomingExpensesWidget onAddExpense={() => openNewTransaction(undefined, 'expense')} />
-            </div>
-          </div>
+        <div className="animate-slide-up" style={{ animationDelay: '50ms' }}>
+          <SummaryCards />
         </div>
 
+        <div className="animate-slide-up" style={{ animationDelay: '120ms' }}>
+          <ExpensesByCategoryCarousel />
+        </div>
+
+        <div className="animate-slide-up" style={{ animationDelay: '180ms' }}>
+          <CreditCardsWidget />
+        </div>
+
+        <div className="animate-slide-up" style={{ animationDelay: '220ms' }}>
+          <UpcomingExpensesWidget onAddExpense={() => openNewTransaction(undefined, 'expense')} />
+        </div>
+
+        <div className="animate-slide-up" style={{ animationDelay: '260ms' }}>
+          <FinancialFlowChart />
+        </div>
+
+        {/* Gráfico de investimentos */}
         <div className="animate-slide-up" style={{ animationDelay: '300ms' }}>
+          <InvestmentChart />
+        </div>
+
+        <div className="animate-slide-up" style={{ animationDelay: '340ms' }}>
           <TransactionsTable />
         </div>
       </div>

@@ -112,12 +112,12 @@ export function CreditCardsWidget() {
       </header>
 
       <div
-        className="flex flex-col gap-4"
+        className="flex gap-4 overflow-x-auto no-scrollbar pb-1"
         onTouchStart={(e) => handleSwipeStart(e.changedTouches[0].clientX)}
         onTouchEnd={(e) => handleSwipeEnd(e.changedTouches[0].clientX)}
       >
         {currentPageItems.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-white p-6 text-center flex flex-col items-center gap-2">
+          <div className="rounded-xl border border-dashed border-border bg-white p-6 text-center flex flex-col items-center gap-2 min-w-[320px]">
             <Icon name="credit-card" className="w-8 h-8 text-text-secondary" />
             <p className="text-text-secondary text-body">Nenhum cartão ou conta cadastrado</p>
           </div>
@@ -165,7 +165,7 @@ export function CreditCardsWidget() {
                 <div
                   key={card.id}
                   className="
-                    flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
+                    min-w-[320px] flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
                     px-5 py-4 transition-card
                     hover:-translate-y-1 hover:shadow-md cursor-pointer
                     animate-slide-up
@@ -204,7 +204,7 @@ export function CreditCardsWidget() {
                 <div
                   key={account.id}
                   className="
-                    flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
+                    min-w-[320px] flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
                     px-5 py-4 transition-card
                     hover:-translate-y-1 hover:shadow-md cursor-pointer
                     animate-slide-up
@@ -232,50 +232,7 @@ export function CreditCardsWidget() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-2 w-2 rounded-full transition ${i === clampedPage ? 'bg-text-primary' : 'bg-gray-300'}`}
-              />
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={clampedPage === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="
-                w-9 h-9 rounded-full border border-border bg-white
-                flex items-center justify-center
-                disabled:opacity-50 disabled:cursor-not-allowed
-                hover:bg-bg-secondary
-                transition-button
-              "
-              aria-label="Página anterior"
-            >
-              <Icon name="chevronLeft" className="w-5 h-5 text-text-primary" />
-            </button>
-            <button
-              type="button"
-              disabled={clampedPage >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              className="
-                w-9 h-9 rounded-full border border-border bg-white
-                flex items-center justify-center
-                disabled:opacity-50 disabled:cursor-not-allowed
-                hover:bg-bg-secondary
-                transition-button
-              "
-              aria-label="Próxima página"
-            >
-              <Icon name="chevronRight" className="w-5 h-5 text-text-primary" />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Carrossel horizontal: sem paginação; rolagem livre */}
 
       <AddAccountCardModal open={createOpen} onClose={() => setCreateOpen(false)} />
       <CardDetailsModal
