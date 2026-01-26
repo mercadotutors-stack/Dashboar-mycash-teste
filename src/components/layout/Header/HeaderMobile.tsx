@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { MenuDropdown } from './MenuDropdown'
 import { useAuth } from '../../../context/AuthContext'
+import { useFinance } from '../../../context/FinanceContext'
 
 export function HeaderMobile() {
   const [isOpen, setIsOpen] = useState(false)
   const { user } = useAuth()
+  const { workspaces, activeWorkspaceId } = useFinance()
 
   const toggle = () => setIsOpen((prev) => !prev)
   const close = () => setIsOpen(false)
@@ -12,6 +14,9 @@ export function HeaderMobile() {
   const userEmail = user?.email || ''
   const userName = userEmail.split('@')[0] || 'Usuário'
   const userInitial = userName.charAt(0).toUpperCase()
+
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
+  const workspaceName = activeWorkspace?.name || 'Workspace'
 
   return (
     <>
@@ -32,12 +37,12 @@ export function HeaderMobile() {
             className="font-bold text-sidebar-active-text"
             style={{
               fontFamily: 'Inter, sans-serif',
-              fontSize: '22px',
-              lineHeight: '28px',
+              fontSize: '20px',
+              lineHeight: '24px',
               letterSpacing: '0.3px',
             }}
           >
-            mycash+
+            {workspaceName}
           </span>
         </div>
 

@@ -123,16 +123,16 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                 className="font-bold text-sidebar-active-text"
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: '36px',
-                  lineHeight: '44px',
+                  fontSize: '28px',
+                  lineHeight: '34px',
                   letterSpacing: '0.3px',
                 }}
               >
-                mycash+
+                {currentWorkspace?.name || 'Workspace'}
               </h1>
             ) : (
-              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white font-bold text-sm">
-                m+
+              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white font-bold text-xs">
+                {(currentWorkspace?.name || 'W').charAt(0).toUpperCase()}
               </div>
             )}
           </div>
