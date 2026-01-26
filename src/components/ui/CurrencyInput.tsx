@@ -59,14 +59,6 @@ export function CurrencyInput({
     return centavos / 100
   }
 
-  /**
-   * Converte reais para centavos
-   * Ex: 1234.56 reais → 123456 centavos
-   */
-  const reaisToCentavos = (reais: number): number => {
-    return Math.round(reais * 100)
-  }
-
   // Atualiza displayValue quando value prop muda externamente (não durante digitação)
   useEffect(() => {
     if (isTypingRef.current) {
