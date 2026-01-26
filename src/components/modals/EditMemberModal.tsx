@@ -64,8 +64,8 @@ export function EditMemberModal({ open, member, onClose }: Props) {
         setUploadProgress('Upload concluído!')
         setTimeout(() => setUploadProgress(null), 2000)
       } else {
-        setToast('Erro ao fazer upload da imagem. Verifique o console para mais detalhes.')
-        setTimeout(() => setToast(null), 3000)
+        setToast('Erro ao fazer upload. Verifique se o bucket "avatars" foi criado no Supabase Storage.')
+        setTimeout(() => setToast(null), 5000)
       }
     } catch (err) {
       console.error('Erro no upload:', err)

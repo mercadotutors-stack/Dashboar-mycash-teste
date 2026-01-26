@@ -100,7 +100,14 @@ export async function uploadImage(
       // Mensagens de erro mais específicas
       if (error.message?.includes('Bucket') || error.message?.includes('not found')) {
         throw new Error(
-          'Bucket "avatars" não encontrado. Crie o bucket no Supabase Storage primeiro e configure as políticas RLS conforme documentação.'
+          '❌ Bucket "avatars" não encontrado!\n\n' +
+          '📋 PASSO A PASSO:\n' +
+          '1. Acesse Supabase Dashboard > Storage\n' +
+          '2. Clique em "New bucket"\n' +
+          '3. Nome: "avatars" (minúsculas)\n' +
+          '4. Marque como PÚBLICO\n' +
+          '5. Execute supabase/storage_policies.sql no SQL Editor\n\n' +
+          '📖 Veja o guia completo em: supabase/SETUP_STORAGE.md'
         )
       }
       

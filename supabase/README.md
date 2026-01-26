@@ -17,12 +17,13 @@ Execute apenas o arquivo `schema_fixed.sql`:
 4. Execute
 
 ### Cenário 3: Configurar Storage para Upload de Avatares
-Execute o arquivo `storage_policies.sql`:
-1. **Primeiro:** Crie o bucket 'avatars' no Supabase Dashboard > Storage
-   - Nome: `avatars`
-   - Público: Sim (para leitura direta das imagens)
-2. **Depois:** Execute `storage_policies.sql` no SQL Editor
-   - Isso configurará as políticas RLS para permitir uploads de usuários autenticados
+**✅ AUTOMÁTICO:** O bucket e políticas já foram criados via migration!
+
+Se precisar recriar manualmente, execute `create_avatars_bucket.sql` no SQL Editor:
+- Cria o bucket 'avatars' automaticamente
+- Configura como público
+- Aplica todas as políticas RLS necessárias
+- Tudo em um único script!
 
 ## 🔒 Políticas RLS
 
