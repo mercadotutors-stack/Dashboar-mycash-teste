@@ -50,7 +50,7 @@ export function ModalWrapper({ open, onClose, children, className = '' }: ModalW
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
+      className={`fixed inset-0 z-50 flex ${isAnimating ? 'animate-fade-in' : 'animate-fade-out'}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
@@ -65,7 +65,7 @@ export function ModalWrapper({ open, onClose, children, className = '' }: ModalW
 
       {/* Modal */}
       <div
-        className={`relative ${isAnimating ? 'animate-scale-in' : 'animate-scale-out'} ${className}`}
+        className={`relative w-full h-full ${isAnimating ? 'animate-scale-in' : 'animate-scale-out'} ${className}`}
         style={{ animationDuration: '250ms' }}
         onClick={(e) => e.stopPropagation()}
       >

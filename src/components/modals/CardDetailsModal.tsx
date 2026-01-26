@@ -37,7 +37,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
     <ModalWrapper
       open={open && !!card}
       onClose={onClose}
-      className="w-full h-full sm:max-h-[90vh] bg-white flex flex-col"
+      className="w-full h-full bg-white flex flex-col"
     >
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border px-6 py-4 bg-white">
         <div className="flex items-center gap-4">
