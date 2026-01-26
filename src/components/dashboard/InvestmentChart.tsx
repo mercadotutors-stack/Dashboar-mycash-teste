@@ -8,7 +8,11 @@ export function InvestmentChart() {
   const { bankAccounts, transactions } = useFinance()
 
   const data = useMemo(() => {
-    const investmentAccounts = bankAccounts.filter((acc) => acc.accountType === 'investment')
+    const investmentAccounts = bankAccounts.filter((acc) => {
+      const name = (acc.name || '').toLowerCase()
+      const bank = (acc.bank || '').toLowerCase()
+      return acc.accountType === 'investment' || name.includes('invest') || bank.includes('invest')
+    })
     if (!investmentAccounts.length) return []
 
     const accountIds = new Set(investmentAccounts.map((a) => a.id))

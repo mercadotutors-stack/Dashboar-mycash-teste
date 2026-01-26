@@ -114,8 +114,11 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
     })
   }, [creditCards, transactions])
 
-  // Ordena por fechamento mais próximo e limita a 5 (mesmo valor 0 para exibir a próxima)
-  const visibleBills = bills.sort((a, b) => a.end.getTime() - b.end.getTime()).slice(0, 5)
+  // Ordena por fechamento mais próximo
+  const sortedBills = useMemo(
+    () => [...bills].sort((a, b) => a.end.getTime() - b.end.getTime()),
+    [bills],
+  )
 
   const handleOpenBill = (bill: BillItem) => {
     setSelectedCardId(bill.cardId)
@@ -144,33 +147,33 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
         </button>
       </header>
 
-      {visibleBills.length === 0 ? (
-        <div className="border border-dashed border-border rounded-lg py-8 px-4 flex flex-col items-center justify-center gap-2 text-center bg-white">
+      {sortedBills.length === 0 ? (
+        <div className="border border-dashed border-border rounded-lg py-6 px-4 flex flex-col items-center justify-center gap-2 text-center bg-white">
           <Icon name="check" className="text-green-600 w-8 h-8" />
           <p className="text-text-secondary text-sm font-medium">Nenhuma fatura pendente</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {visibleBills.map((bill, idx) => (
+        <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+          {sortedBills.map((bill, idx) => (
             <button
               key={`${bill.cardId}-${bill.monthKey}`}
               type="button"
               onClick={() => handleOpenBill(bill)}
-              className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border border-border bg-white transition-all duration-200 ease-out hover:bg-gray-50 animate-slide-up text-left"
+              className="min-w-[260px] flex items-center justify-between gap-2 py-3 px-3 rounded-lg border border-border bg-white transition-all duration-200 ease-out hover:bg-gray-50 animate-slide-up text-left"
               style={{ animationDelay: `${idx * 30}ms` }}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-1 mb-1">
                   <span className="text-sm font-semibold text-text-primary truncate">{bill.cardName}</span>
                   <span className="text-xs text-text-secondary whitespace-nowrap">•••• {bill.lastDigits || '****'}</span>
                 </div>
-                <div className="text-xs text-text-secondary">
-                  Fecha {bill.end.toLocaleDateString('pt-BR')}
-                  {bill.dueDay ? ` • Vence ${String(bill.dueDay).padStart(2, '0')}` : ''}
+                <div className="text-[11px] text-text-secondary flex flex-col">
+                  <span>Fecha {bill.end.toLocaleDateString('pt-BR')}</span>
+                  {bill.dueDay ? <span>Vence dia {String(bill.dueDay).padStart(2, '0')}</span> : null}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-1 rounded-full border border-border text-text-secondary">
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-text-secondary">
                   {bill.status === 'open'
                     ? 'Em aberto'
                     : bill.status === 'closed'
