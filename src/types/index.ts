@@ -29,6 +29,7 @@ export interface Transaction {
   description: string;
   category: string;
   date: Date;
+  workspaceId?: string;
   accountId: string; // ID da conta bancária ou cartão de crédito
   memberId: string | null; // ID do membro da família responsável (null = geral)
   installments?: number; // Número de parcelas (1 = à vista) - legado
@@ -70,6 +71,7 @@ export interface Goal {
 export interface CreditCard {
   id: string;
   name: string;
+  workspaceId?: string;
   holderId: string; // ID do membro titular do cartão
   limit: number; // Limite total do cartão
   currentBill: number; // Fatura atual (gastos do mês)
@@ -90,6 +92,7 @@ export interface CreditCard {
 export interface BankAccount {
   id: string;
   name: string;
+  workspaceId?: string;
   holderId: string; // ID do membro titular da conta
   balance: number; // Saldo atual da conta
   bank?: string; // Nome do banco
@@ -106,6 +109,7 @@ export interface FamilyMember {
   id: string;
   name: string;
   role: string; // Ex: "Pai", "Mãe", "Filho", "Avô", etc
+  workspaceId?: string;
   email?: string; // Email do membro (opcional)
   avatarUrl?: string; // URL do avatar (ou padrão se não fornecido)
   monthlyIncome?: number; // Renda mensal estimada (opcional)

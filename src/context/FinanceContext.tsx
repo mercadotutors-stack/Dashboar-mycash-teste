@@ -10,7 +10,7 @@ type FamilyMemberInput = Omit<FamilyMember, 'id' | 'createdAt' | 'updatedAt'>
 
 type ExpensesByCategory = Array<{ category: string; total: number }>
 type CategoryPercentage = Array<{ category: string; percentage: number }>
-type Category = { id: string; name: string; type: 'income' | 'expense' }
+type Category = { id: string; name: string; type: 'income' | 'expense'; workspaceId?: string }
 
 interface FinanceContextValue {
   userId: string | null // ID do usuário na tabela users (não auth.users)
@@ -50,6 +50,7 @@ interface FinanceContextValue {
 }
 
 const FinanceContext = createContext<FinanceContextValue | undefined>(undefined)
+const DEFAULT_WORKSPACE_ID = '00000000-0000-4000-8000-000000000001'
 
 const toDate = (value: string | Date | null | undefined) => (value ? new Date(value) : new Date())
 const mapStatus = (dbStatus?: string): 'pending' | 'completed' | 'cancelled' => {
@@ -172,16 +173,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     const loadAll = async () => {
       try {
         const [fm, acc, cat, tx] = await Promise.all([
-          supabase.from('family_members').select('*'),
-          supabase.from('accounts').select('*'),
-          supabase.from('categories').select('*').eq('user_id', userId),
-          supabase.from('transactions').select('*'),
+          supabase.from('family_members').select('*').eq('workspace_id', DEFAULT_WORKSPACE_ID),
+          supabase.from('accounts').select('*').eq('workspace_id', DEFAULT_WORKSPACE_ID),
+          supabase.from('categories').select('*').eq('workspace_id', DEFAULT_WORKSPACE_ID),
+          supabase.from('transactions').select('*').eq('workspace_id', DEFAULT_WORKSPACE_ID),
         ])
 
       if (fm.data) {
         setFamilyMembers(
           fm.data.map((item) => ({
             id: item.id,
+            workspaceId: item.workspace_id ?? DEFAULT_WORKSPACE_ID,
             name: item.name,
             role: item.role,
             email: item.email ?? undefined,
@@ -200,6 +202,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           if (a.type === 'CREDIT_CARD') {
             cardsBase.push({
               id: a.id,
+              workspaceId: a.workspace_id ?? DEFAULT_WORKSPACE_ID,
               name: a.name,
               holderId: a.holder_id,
               limit: Number(a.credit_limit ?? 0),
@@ -215,6 +218,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           } else {
             banks.push({
               id: a.id,
+              workspaceId: a.workspace_id ?? DEFAULT_WORKSPACE_ID,
               name: a.name,
               holderId: a.holder_id,
               balance: Number(a.balance ?? 0),
@@ -233,6 +237,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         categoriesMapped = cat.data.map((c) => ({
           id: c.id,
           name: c.name,
+          workspaceId: c.workspace_id ?? undefined,
           type: mapType(c.type),
         }))
         setCategories(categoriesMapped)
@@ -249,6 +254,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           description: t.description,
           category: t.category_id ? catMap.get(t.category_id) ?? 'Sem categoria' : 'Sem categoria',
           date: toDate(t.date),
+          workspaceId: t.workspace_id ?? DEFAULT_WORKSPACE_ID,
           accountId: t.account_id ?? '',
           memberId: t.member_id ?? null,
           installments: t.total_installments ?? 1, // legado
@@ -399,6 +405,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const isPaid = idx < paidInstallments
         return {
           user_id: userId,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
           amount: valueCents / 100,
           description: input.description,
@@ -429,6 +436,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         description: row.description,
         category: categoryName,
         date: toDate(row.date),
+        workspaceId: row.workspace_id ?? DEFAULT_WORKSPACE_ID,
         accountId: row.account_id ?? '',
         memberId: row.member_id ?? null,
         installments: row.total_installments ?? 1,
@@ -572,6 +580,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       // Prepara payload garantindo que campos obrigatórios estão presentes
       const insertPayload: Record<string, any> = {
         user_id: userId,
+        workspace_id: DEFAULT_WORKSPACE_ID,
         name: input.name.trim(),
         role: input.role.trim(),
         monthly_income: typeof input.monthlyIncome === 'number' ? input.monthlyIncome : (Number(input.monthlyIncome) || 0),
@@ -629,6 +638,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       console.log('Membro criado com sucesso:', data)
       const member: FamilyMember = {
         id: data.id,
+        workspaceId: data.workspace_id ?? DEFAULT_WORKSPACE_ID,
         name: data.name,
         role: data.role,
         email: data.email ?? undefined,
@@ -705,6 +715,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       console.log('Membro atualizado com sucesso:', data)
       const member: FamilyMember = {
         id: data.id,
+        workspaceId: data.workspace_id ?? DEFAULT_WORKSPACE_ID,
         name: data.name,
         role: data.role,
         email: data.email ?? undefined,
@@ -730,6 +741,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         .from('accounts')
         .insert({
           user_id: userId,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           type: input.accountType === 'savings' ? 'SAVINGS' : 'CHECKING',
           name: input.name,
           bank: input.bank ?? 'Conta',
@@ -741,6 +753,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (error) throw error
       const bankAccount: BankAccount = {
         id: data.id,
+        workspaceId: data.workspace_id ?? DEFAULT_WORKSPACE_ID,
         name: data.name,
         holderId: data.holder_id,
         balance: Number(data.balance ?? 0),
@@ -767,6 +780,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         .from('accounts')
         .insert({
           user_id: userId,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           type: 'CREDIT_CARD',
           name: input.name,
           bank: input.bank ?? 'Cartão',
@@ -783,6 +797,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (error) throw error
       const card: CreditCard = {
         id: data.id,
+        workspaceId: data.workspace_id ?? DEFAULT_WORKSPACE_ID,
         name: data.name,
         holderId: data.holder_id,
         limit: Number(data.credit_limit ?? 0),
@@ -815,6 +830,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         .from('categories')
         .insert({
           user_id: userId,
+          workspace_id: DEFAULT_WORKSPACE_ID,
           name: input.name.trim(),
           type: input.type === 'income' ? 'INCOME' : 'EXPENSE',
         })
@@ -833,7 +849,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
       
       console.log('Categoria criada com sucesso:', data)
-      const cat: Category = { id: data.id, name: data.name, type: mapType(data.type) }
+      const cat: Category = { id: data.id, name: data.name, type: mapType(data.type), workspaceId: data.workspace_id ?? DEFAULT_WORKSPACE_ID }
       setCategories((prev) => {
         // Verifica se a categoria já existe para evitar duplicatas
         const exists = prev.some((c) => c.id === cat.id)
