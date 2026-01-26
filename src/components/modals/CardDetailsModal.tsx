@@ -21,6 +21,7 @@ type MonthTab = {
   start: Date
   end: Date
   total: number
+  pendingTotal: number
 }
 
 // Helper para obter range do ciclo
@@ -109,6 +110,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
         start,
         end,
         total: 0, // será calculado abaixo
+        pendingTotal: 0,
       })
     }
 
@@ -127,13 +129,15 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
         const txDate = tx.date.getTime()
         return txDate >= tab.start.getTime() && txDate <= tab.end.getTime()
       })
-      
-      // Calcula total (apenas pendentes para fatura)
-      const total = monthExpenses
+
+      const pendingTotal = monthExpenses
         .filter((tx) => tx.status === 'pending')
         .reduce((sum, tx) => sum + (tx.amount || 0), 0)
-      
-      tab.total = total
+
+      const fullTotal = monthExpenses.reduce((sum, tx) => sum + (tx.amount || 0), 0)
+
+      tab.total = fullTotal
+      tab.pendingTotal = pendingTotal
       map.set(tab.monthKey, monthExpenses.sort((a, b) => b.date.getTime() - a.date.getTime()))
     })
 
@@ -186,7 +190,7 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
 
   const currentStatus = useMemo(() => {
     if (!currentTab) return 'open'
-    return getInvoiceStatus(currentTab.end, currentDueDate, currentTab.total)
+    return getInvoiceStatus(currentTab.end, currentDueDate, currentTab.pendingTotal ?? 0)
   }, [currentTab, currentDueDate])
 
   if (!open || !card) return null
