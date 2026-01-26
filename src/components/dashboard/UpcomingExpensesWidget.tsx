@@ -32,16 +32,45 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   }
 
   // Filtra e mapeia transações para despesas pendentes
+  // Mostra apenas a próxima parcela de cada compra parcelada (da fatura atual)
   const expenses = useMemo<PendingExpense[]>(() => {
     const now = new Date()
     now.setHours(0, 0, 0, 0)
 
+    // Agrupa por compra (mesma descrição + mesmo accountId + parcelas)
+    const groupedByPurchase = new Map<string, typeof transactions>()
+    
+    transactions
+      .filter((tx) => tx.type === 'expense' && !tx.isPaid && tx.status !== 'cancelled')
+      .forEach((tx) => {
+        if (tx.totalInstallments && tx.totalInstallments > 1) {
+          // Para compras parceladas, agrupa por descrição + accountId
+          const key = `${tx.description}|${tx.accountId}|${tx.totalInstallments}`
+          if (!groupedByPurchase.has(key)) {
+            groupedByPurchase.set(key, [])
+          }
+          groupedByPurchase.get(key)!.push(tx)
+        } else {
+          // Para compras à vista, adiciona diretamente
+          const key = `${tx.id}`
+          groupedByPurchase.set(key, [tx])
+        }
+      })
+
+    // Para cada compra parcelada, pega apenas a próxima parcela (menor data)
+    const nextInstallments: typeof transactions = []
+    groupedByPurchase.forEach((txs) => {
+      if (txs.length === 1) {
+        nextInstallments.push(txs[0])
+      } else {
+        // Para parceladas, pega a parcela com menor data (próxima a vencer)
+        const sorted = txs.sort((a, b) => a.date.getTime() - b.date.getTime())
+        nextInstallments.push(sorted[0])
+      }
+    })
+
     return sortExpenses(
-      transactions
-        .filter((tx) => {
-          // Apenas despesas não pagas
-          return tx.type === 'expense' && !tx.isPaid && tx.status !== 'cancelled'
-        })
+      nextInstallments
         .map((tx) => {
           const card = creditCards.find((c) => c.id === tx.accountId)
           
@@ -67,7 +96,10 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
-  const isCompact = expenses.length > 4
+  const [showAll, setShowAll] = useState(false)
+  const MAX_VISIBLE = 5
+  const visibleExpenses = showAll ? expenses : expenses.slice(0, MAX_VISIBLE)
+  const hasMore = expenses.length > MAX_VISIBLE
 
   const resolvePaymentSource = (expense: PendingExpense) => {
     const card = creditCards.find((c) => c.id === expense.accountId)
@@ -138,32 +170,28 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   return (
     <section className="rounded-xl border border-border bg-white p-4 sm:p-6 lg:p-8 shadow-sm flex flex-col gap-4 animate-slide-up">
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Icon name="credit-card" className="w-5 h-5 text-text-primary" />
-          <h2 className="text-heading-lg font-semibold text-text-primary">Próximas despesas</h2>
+        <div className="flex items-center gap-2">
+          <Icon name="credit-card" className="w-4 h-4 text-text-primary" />
+          <h2 className="text-sm font-semibold text-text-primary">Próximas despesas</h2>
         </div>
         <button
           type="button"
           onClick={handleAddNew}
-          className="w-10 h-10 rounded-full border border-border text-text-primary flex items-center justify-center transition-colors duration-200 hover:bg-gray-50"
+          className="w-8 h-8 rounded-full border border-border text-text-primary flex items-center justify-center transition-colors duration-200 hover:bg-gray-50"
           aria-label="Adicionar nova despesa"
         >
-          <Icon name="add" className="w-6 h-6" />
+          <Icon name="add" className="w-4 h-4" />
         </button>
       </header>
 
       {expenses.length === 0 ? (
-        <div className="border border-dashed border-border rounded-lg py-10 px-6 flex flex-col items-center justify-center gap-2 text-center bg-white">
-          <Icon name="check" className="text-green-600 w-10 h-10" />
-          <p className="text-text-secondary text-body font-medium">Nenhuma despesa pendente</p>
+        <div className="border border-dashed border-border rounded-lg py-8 px-4 flex flex-col items-center justify-center gap-2 text-center bg-white">
+          <Icon name="check" className="text-green-600 w-8 h-8" />
+          <p className="text-text-secondary text-sm font-medium">Nenhuma despesa pendente</p>
         </div>
       ) : (
-        <div
-          className={`divide-y divide-border ${
-            isCompact ? 'max-h-[420px] overflow-y-auto no-scrollbar pr-2 snap-y snap-mandatory' : ''
-          }`}
-        >
-          {expenses.map((expense, idx) => {
+        <div className="flex flex-col gap-2">
+          {visibleExpenses.map((expense, idx) => {
             const isRemoving = removingId === expense.id
             const isActive = activeId === expense.id
             const originLabel = resolvePaymentSource(expense)
@@ -171,46 +199,59 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
             return (
               <div
                 key={expense.id}
-                className={`flex items-start justify-between gap-4 ${isCompact ? 'py-4' : 'py-6'} transition-all duration-200 ease-out ${
-                  isRemoving ? 'opacity-0 -translate-y-1' : ''
-                } ${isCompact ? 'snap-start' : ''} animate-slide-up`}
-                style={{ animationDelay: `${idx * 50}ms` }}
+                className={`flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border border-border bg-white transition-all duration-200 ease-out ${
+                  isRemoving ? 'opacity-0 -translate-y-1' : 'hover:bg-gray-50'
+                } animate-slide-up`}
+                style={{ animationDelay: `${idx * 30}ms` }}
               >
-                <div className="flex flex-col gap-1">
-                  <span className="text-heading-md font-semibold text-text-primary">
-                    {expense.description}
-                  </span>
-                  <span className="text-sm font-semibold text-text-primary">
-                    Vence dia {formatDate(expense.dueDate)}
-                  </span>
-                  <span className="text-sm text-text-secondary">{originLabel}</span>
-                  {expense.installments && expense.currentInstallment ? (
-                    <span className="text-small text-text-secondary">
-                      Parcela {expense.currentInstallment}/{expense.installments}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-semibold text-text-primary truncate">
+                      {expense.description}
                     </span>
-                  ) : null}
+                    {expense.installments && expense.currentInstallment ? (
+                      <span className="text-xs text-text-secondary whitespace-nowrap">
+                        {expense.currentInstallment}/{expense.installments}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <span>Vence {formatDate(expense.dueDate)}</span>
+                    <span>•</span>
+                    <span className="truncate">{originLabel}</span>
+                  </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  <span className="text-heading-md font-semibold text-text-primary">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-text-primary whitespace-nowrap">
                     {formatCurrency(expense.amount)}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleMarkAsPaid(expense.id)}
-                    className={`w-8 h-8 rounded-full border flex items-center justify-center text-text-primary transition-button ${
+                    className={`w-7 h-7 rounded-full border flex items-center justify-center text-text-primary transition-button flex-shrink-0 ${
                       isActive
                         ? 'bg-green-50 border-green-500 text-green-600'
                         : 'border-border hover:bg-green-50 hover:border-green-500 hover:text-green-600'
                     }`}
                     aria-label={`Marcar ${expense.description} como paga`}
                   >
-                    <Icon name="check" className="w-4 h-4" />
+                    <Icon name="check" className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             )
           })}
+          
+          {hasMore && !showAll && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="mt-2 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors text-center"
+            >
+              Ver mais ({expenses.length - MAX_VISIBLE} restantes)
+            </button>
+          )}
         </div>
       )}
 

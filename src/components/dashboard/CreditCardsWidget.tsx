@@ -7,6 +7,8 @@ import { CardDetailsModal } from '../modals/CardDetailsModal'
 import { AddAccountCardModal } from '../modals/AddAccountCardModal'
 import { NewTransactionModal } from '../modals/NewTransactionModal'
 import { formatCurrency } from '../../utils'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 type Theme = 'lime' | 'black' | 'white'
 
@@ -125,11 +127,14 @@ export function CreditCardsWidget() {
               const card = item
               const style = themeStyles[(card.theme as Theme) || 'white'] || themeStyles.white
               const usage = Math.round((card.currentBill / card.limit) * 100)
+              const hasBill = card.currentBill > 0
+              const currentMonth = format(new Date(), 'MMM', { locale: ptBR })
+              
               return (
                 <div
                   key={card.id}
                   className="
-                    flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
+                    relative flex items-center gap-4 rounded-xl bg-white shadow-sm border border-border
                     px-5 py-4 transition-card
                     hover:-translate-y-1 hover:shadow-md cursor-pointer
                     animate-slide-up
@@ -137,13 +142,22 @@ export function CreditCardsWidget() {
                   style={{ animationDelay: `${idx * 60}ms` }}
                   onClick={() => handleDetail(card.id, 'card')}
                 >
+                  {/* Mês no canto superior direito quando não tem fatura */}
+                  {!hasBill && (
+                    <div className="absolute top-2 right-2 text-xs text-text-secondary font-medium">
+                      {currentMonth}
+                    </div>
+                  )}
+                  
                   <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${style.blockClass}`}>
                     <Icon name="credit-card" className={`w-6 h-6 ${style.iconClass}`} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-text-secondary truncate">{card.name}</div>
-                    <div className="text-2xl font-bold text-text-primary leading-snug">{formatCurrency(card.currentBill)}</div>
+                    <div className="text-2xl font-bold text-text-primary leading-snug">
+                      {formatCurrency(card.currentBill)}
+                    </div>
                     <div className="text-sm text-text-secondary">•••• {card.lastDigits || '****'}</div>
                   </div>
 
