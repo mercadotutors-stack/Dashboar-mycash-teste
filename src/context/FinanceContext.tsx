@@ -179,25 +179,70 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!userId) return
     const loadAll = async () => {
       try {
-        // carrega workspaces do owner
-        const wsRes = await supabase.from('workspaces').select('*').eq('owner_id', userId)
+        // carrega workspaces do owner ou o workspace default (Torso Family)
+        const orFilter = `owner_id.eq.${userId},id.eq.${DEFAULT_WORKSPACE_ID}`
+        let wsData: any[] = []
+        const wsRes = await supabase.from('workspaces').select('*').or(orFilter)
+
         if (wsRes.data) {
-          setWorkspaces(
-            wsRes.data.map((w) => ({
-              id: w.id,
-              name: w.name,
-              type: w.type,
-              ownerId: w.owner_id,
-            })),
-          )
-          // garante workspace ativo
-          const exists = wsRes.data.some((w) => w.id === activeWorkspaceId)
-          if (!exists && wsRes.data.length > 0) {
-            setActiveWorkspaceId(wsRes.data[0].id)
+          wsData = wsRes.data
+        }
+
+        // Se não existir nenhum, cria/garante o default para o usuário atual
+        if (!wsData.length) {
+          const { data: inserted } = await supabase
+            .from('workspaces')
+            .upsert(
+              {
+                id: DEFAULT_WORKSPACE_ID,
+                name: 'Família Torso',
+                type: 'family',
+                owner_id: userId,
+              },
+              { onConflict: 'id' },
+            )
+            .select('*')
+
+          if (inserted?.length) {
+            wsData = inserted
           }
         }
 
-        const wsFilter = activeWorkspaceId || DEFAULT_WORKSPACE_ID
+        let wsFilter = activeWorkspaceId || DEFAULT_WORKSPACE_ID
+
+        // Deduplica por id e seta estado
+        if (wsData.length) {
+          const unique = Array.from(
+            new Map(
+              wsData.map((w) => [
+                w.id,
+                {
+                  id: w.id,
+                  name: w.name,
+                  type: w.type,
+                  ownerId: w.owner_id,
+                },
+              ]),
+            ).values(),
+          )
+
+          setWorkspaces(unique)
+
+          const defaultExists = unique.find((w) => w.id === DEFAULT_WORKSPACE_ID)
+          const activeExists = unique.find((w) => w.id === activeWorkspaceId)
+          let nextActive = wsFilter
+          if (!activeExists) {
+            if (defaultExists) {
+              nextActive = DEFAULT_WORKSPACE_ID
+              setActiveWorkspaceId(DEFAULT_WORKSPACE_ID)
+            } else {
+              nextActive = unique[0].id
+              setActiveWorkspaceId(unique[0].id)
+            }
+          }
+          wsFilter = nextActive
+        }
+
         const [fm, acc, cat, tx] = await Promise.all([
           supabase.from('family_members').select('*').eq('workspace_id', wsFilter),
           supabase.from('accounts').select('*').eq('workspace_id', wsFilter),
