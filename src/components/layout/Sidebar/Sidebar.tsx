@@ -3,9 +3,9 @@ import { NAVIGATION_ITEMS } from '../../../constants'
 import { SidebarItem } from './SidebarItem'
 import { UserProfile } from './UserProfile'
 import { Icon } from '../../ui/Icon'
-import { ModalWrapper } from '../../ui/ModalWrapper'
 import { useFinance } from '../../../context/FinanceContext'
 import { uploadImage } from '../../../lib/uploadImage'
+import { ModalWrapper } from '../../ui/ModalWrapper'
 
 interface SidebarProps {
   isExpanded: boolean
@@ -340,13 +340,18 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           setNewType('family')
           setNewSubtitle('')
         }}
-        className="items-start justify-center"
+        className="items-center justify-center"
       >
-        <div className="w-full h-full bg-white overflow-auto px-4 py-6 sm:px-8 sm:py-10 flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <h2 className="text-heading-lg font-semibold text-text-primary">Novo workspace</h2>
-              <p className="text-sm text-text-secondary">Organize dados por família, empresa ou projetos.</p>
+        <div className="w-full max-w-4xl h-[85vh] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+          <header className="px-6 py-5 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-text-primary">
+                <Icon name="workspace_premium" className="w-7 h-7" />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-heading-xl font-bold text-text-primary">Novo workspace</h2>
+                <p className="text-sm text-text-secondary">Organize dados por família, empresa ou projetos.</p>
+              </div>
             </div>
             <button
               type="button"
@@ -355,49 +360,55 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                 setShowCreateModal(false)
                 setNewName('')
                 setNewType('family')
+                setNewSubtitle('')
               }}
-              className="text-sm text-text-secondary hover:text-text-primary transition"
+              className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
+              aria-label="Fechar modal"
             >
-              Fechar
+              <Icon name="close" className="w-6 h-6 text-text-primary" />
             </button>
+          </header>
+
+          <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-6">
+            <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-primary">Nome do workspace</span>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Família Torso"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-primary">Legenda</span>
+                  <input
+                    value={newSubtitle}
+                    onChange={(e) => setNewSubtitle(e.target.value)}
+                    placeholder="Workspace padrão"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-primary">Tipo</span>
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value as 'family' | 'company' | 'other')}
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    <option value="family">Família</option>
+                    <option value="company">Empresa</option>
+                    <option value="other">Outro</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary">Nome do workspace</span>
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Família Torso"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary">Legenda</span>
-              <input
-                value={newSubtitle}
-                onChange={(e) => setNewSubtitle(e.target.value)}
-                placeholder="Workspace padrão"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary">Tipo</span>
-              <select
-                value={newType}
-                onChange={(e) => setNewType(e.target.value as 'family' | 'company' | 'other')}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
-              >
-                <option value="family">Família</option>
-                <option value="company">Empresa</option>
-                <option value="other">Outro</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-end gap-3">
+          <footer className="px-6 py-4 border-t border-border bg-white flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => {
@@ -405,6 +416,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                 setShowCreateModal(false)
                 setNewName('')
                 setNewType('family')
+                setNewSubtitle('')
               }}
               className="text-sm text-text-secondary hover:text-text-primary transition"
             >
@@ -418,7 +430,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
             >
               {isSaving ? 'Criando...' : 'Criar workspace'}
             </button>
-          </div>
+          </footer>
         </div>
       </ModalWrapper>
 
@@ -431,13 +443,22 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
           setEditingWsId(null)
           setEditAvatarFile(null)
         }}
-        className="items-start justify-center"
+        className="items-center justify-center"
       >
-        <div className="w-full h-full bg-white overflow-auto px-4 py-6 sm:px-8 sm:py-10 flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <h2 className="text-heading-lg font-semibold text-text-primary">Editar workspace</h2>
-              <p className="text-sm text-text-secondary">Atualize avatar, nome e legenda.</p>
+        <div className="w-full max-w-4xl h-[85vh] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+          <header className="px-6 py-5 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-text-primary overflow-hidden">
+                {editAvatarPreview ? (
+                  <img src={editAvatarPreview} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <Icon name="workspace_premium" className="w-7 h-7" />
+                )}
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-heading-xl font-bold text-text-primary">Editar workspace</h2>
+                <p className="text-sm text-text-secondary">Atualize avatar, nome e legenda.</p>
+              </div>
             </div>
             <button
               type="button"
@@ -447,77 +468,82 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                 setEditingWsId(null)
                 setEditAvatarFile(null)
               }}
-              className="text-sm text-text-secondary hover:text-text-primary transition"
+              className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100"
+              aria-label="Fechar modal"
             >
-              Fechar
+              <Icon name="close" className="w-6 h-6 text-text-primary" />
             </button>
-          </div>
+          </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-3">
-              <span className="text-sm font-medium text-text-primary">Avatar</span>
-              <div className="flex items-center gap-3">
-                {editAvatarPreview ? (
-                  <img src={editAvatarPreview} alt="avatar" className="w-14 h-14 rounded-xl object-cover border border-border" />
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-[#E5E7EB] flex items-center justify-center text-sm font-semibold text-[#111827] uppercase">
-                    {editName?.[0] ?? 'W'}
-                  </div>
-                )}
-                <label className="text-sm font-semibold text-primary cursor-pointer hover:underline">
-                  Alterar foto
+          <div className="flex-1 overflow-y-auto bg-bg-secondary/60 px-6">
+            <div className="mx-auto w-full max-w-3xl py-6 flex flex-col gap-6">
+              <div className="flex flex-col gap-3">
+                <span className="text-sm font-medium text-text-primary">Avatar</span>
+                <div className="flex items-center gap-3">
+                  {editAvatarPreview ? (
+                    <img src={editAvatarPreview} alt="avatar" className="w-16 h-16 rounded-xl object-cover border border-border" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-[#E5E7EB] flex items-center justify-center text-base font-semibold text-[#111827] uppercase">
+                      {editName?.[0] ?? 'W'}
+                    </div>
+                  )}
+                  <label className="text-sm font-semibold text-primary cursor-pointer hover:underline">
+                    Alterar foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setEditAvatarFile(file)
+                          const preview = URL.createObjectURL(file)
+                          setEditAvatarPreview(preview)
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-primary">Nome</span>
                   <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        setEditAvatarFile(file)
-                        const preview = URL.createObjectURL(file)
-                        setEditAvatarPreview(preview)
-                      }
-                    }}
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Família Torso"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-primary">Legenda</span>
+                  <input
+                    value={editSubtitle}
+                    onChange={(e) => setEditSubtitle(e.target.value)}
+                    placeholder="Workspace padrão"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-primary">Tipo</span>
+                  <select
+                    value={editType}
+                    onChange={(e) => setEditType(e.target.value as 'family' | 'company' | 'other')}
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    <option value="family">Família</option>
+                    <option value="company">Empresa</option>
+                    <option value="other">Outro</option>
+                  </select>
                 </label>
               </div>
             </div>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary">Nome</span>
-              <input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="Família Torso"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary">Legenda</span>
-              <input
-                value={editSubtitle}
-                onChange={(e) => setEditSubtitle(e.target.value)}
-                placeholder="Workspace padrão"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary">Tipo</span>
-              <select
-                value={editType}
-                onChange={(e) => setEditType(e.target.value as 'family' | 'company' | 'other')}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
-              >
-                <option value="family">Família</option>
-                <option value="company">Empresa</option>
-                <option value="other">Outro</option>
-              </select>
-            </label>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <footer className="px-6 py-4 border-t border-border bg-white flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => {
@@ -538,7 +564,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
             >
               {isSavingEdit ? 'Salvando...' : 'Salvar'}
             </button>
-          </div>
+          </footer>
         </div>
       </ModalWrapper>
     </aside>
