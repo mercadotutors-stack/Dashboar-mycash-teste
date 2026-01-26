@@ -45,6 +45,34 @@ const getCycleRangeHelper = (closingDay: number, reference: Date) => {
   return { start, end }
 }
 
+const computeDueDate = (cycleEnd: Date, dueDay?: number, closingDay?: number) => {
+  const closeDay = closingDay ?? cycleEnd.getDate()
+  const day = dueDay ?? Math.min(28, closeDay + 7)
+  let month = cycleEnd.getMonth()
+  let year = cycleEnd.getFullYear()
+  if (day <= cycleEnd.getDate()) {
+    month += 1
+    if (month > 11) {
+      month = 0
+      year += 1
+    }
+  }
+  const due = new Date(year, month, day)
+  due.setHours(23, 59, 59, 999)
+  return due
+}
+
+const getInvoiceStatus = (cycleEnd: Date, dueDate: Date, pendingAmount: number) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  if (today < cycleEnd) return 'open'
+  if (today >= cycleEnd && today <= dueDate) {
+    return pendingAmount > 0 ? 'closed' : 'paid'
+  }
+  return pendingAmount > 0 ? 'pending' : 'paid'
+}
+
 export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, initialMonthKey }: Props) {
   const { creditCards, transactions, deleteTransaction } = useFinance()
   const [editTxId, setEditTxId] = useState<string | null>(null)
@@ -152,7 +180,14 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
     return monthTabs.find((t) => t.monthKey === selectedMonth) || monthTabs[0]
   }, [monthTabs, selectedMonth])
 
-  // uso já calculado acima (pendingExpensesAll/limit)
+  const currentDueDate = useMemo(() => {
+    return currentTab ? computeDueDate(currentTab.end, card?.dueDay, card?.closingDay) : new Date()
+  }, [currentTab, card])
+
+  const currentStatus = useMemo(() => {
+    if (!currentTab) return 'open'
+    return getInvoiceStatus(currentTab.end, currentDueDate, currentTab.total)
+  }, [currentTab, currentDueDate])
 
   if (!open || !card) return null
 
@@ -192,6 +227,33 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
                      <InfoCard label="Fatura atual" value={formatCurrency(currentBillAmount)} />
                      <InfoCard label="Limite disponível" value={formatCurrency(card.limit - pendingExpensesAll)} />
                      <InfoCard label="Uso do limite" value={`${usage.toFixed(1)}%`} />
+            </div>
+
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-text-secondary">Status da fatura selecionada:</span>
+              <span
+                className={`px-3 py-1 rounded-full border text-text-primary ${
+                  currentStatus === 'open'
+                    ? 'bg-blue-50 border-blue-200'
+                    : currentStatus === 'closed'
+                      ? 'bg-amber-50 border-amber-200'
+                      : currentStatus === 'pending'
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-green-50 border-green-200'
+                }`}
+              >
+                {currentStatus === 'open'
+                  ? 'Em aberto'
+                  : currentStatus === 'closed'
+                    ? 'Fechada'
+                    : currentStatus === 'pending'
+                      ? 'Pendente'
+                      : 'Paga'}
+              </span>
+              <span className="text-text-secondary">
+                Fecha {currentTab?.end.toLocaleDateString('pt-BR')}
+                {card.dueDay ? ` • Vence ${String(card.dueDay).padStart(2, '0')}` : ''}
+              </span>
             </div>
 
             <div className="flex flex-col gap-2">

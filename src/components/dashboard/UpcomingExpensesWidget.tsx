@@ -13,11 +13,14 @@ type BillItem = {
   cardName: string
   lastDigits?: string
   amount: number
+  pendingAmount: number
   start: Date
   end: Date
   monthKey: string
   closingDay: number
   dueDay?: number
+  dueDate: Date
+  status: 'open' | 'closed' | 'pending' | 'paid'
 }
 
 // Próxima fatura: primeiro fechamento após hoje
@@ -37,6 +40,34 @@ const getNextInvoiceRange = (closingDay: number, reference = new Date()) => {
   return { start, end }
 }
 
+const computeDueDate = (cycleEnd: Date, dueDay?: number, closingDay?: number) => {
+  const closeDay = closingDay ?? cycleEnd.getDate()
+  const day = dueDay ?? Math.min(28, closeDay + 7)
+  let month = cycleEnd.getMonth()
+  let year = cycleEnd.getFullYear()
+  if (day <= cycleEnd.getDate()) {
+    month += 1
+    if (month > 11) {
+      month = 0
+      year += 1
+    }
+  }
+  const due = new Date(year, month, day)
+  due.setHours(23, 59, 59, 999)
+  return due
+}
+
+const getInvoiceStatus = (cycleEnd: Date, dueDate: Date, pendingAmount: number) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  if (today < cycleEnd) return 'open'
+  if (today >= cycleEnd && today <= dueDate) {
+    return pendingAmount > 0 ? 'closed' : 'paid'
+  }
+  return pendingAmount > 0 ? 'pending' : 'paid'
+}
+
 export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   const { creditCards, transactions } = useFinance()
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -46,16 +77,23 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
   const bills = useMemo<BillItem[]>(() => {
     return creditCards.map((card) => {
       const { start, end } = getNextInvoiceRange(card.closingDay ?? 1, new Date())
-      const amount = transactions
+      const cycleTxs = transactions
         .filter(
           (tx) =>
             tx.accountId === card.id &&
             tx.type === 'expense' &&
-            tx.status !== 'cancelled' &&
             tx.date.getTime() >= start.getTime() &&
             tx.date.getTime() <= end.getTime(),
         )
+      const pendingAmount = cycleTxs
+        .filter((tx) => tx.status !== 'cancelled' && tx.status === 'pending')
         .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+      const totalAmount = cycleTxs
+        .filter((tx) => tx.status !== 'cancelled')
+        .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+
+      const dueDate = computeDueDate(end, card.dueDay, card.closingDay)
+      const status = getInvoiceStatus(end, dueDate, pendingAmount)
 
       const monthKey = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`
 
@@ -63,12 +101,15 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
         cardId: card.id,
         cardName: card.name,
         lastDigits: card.lastDigits,
-        amount,
+        amount: pendingAmount || totalAmount,
+        pendingAmount,
         start,
         end,
         monthKey,
         closingDay: card.closingDay ?? 1,
         dueDay: card.dueDay,
+        dueDate,
+        status,
       }
     })
   }, [creditCards, transactions])
@@ -128,8 +169,19 @@ export function UpcomingExpensesWidget({ onAddExpense }: Props) {
                   {bill.dueDay ? ` • Vence ${String(bill.dueDay).padStart(2, '0')}` : ''}
                 </div>
               </div>
-              <div className="text-sm font-semibold text-text-primary whitespace-nowrap">
-                {formatCurrency(bill.amount)}
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded-full border border-border text-text-secondary">
+                  {bill.status === 'open'
+                    ? 'Em aberto'
+                    : bill.status === 'closed'
+                      ? 'Fechada'
+                      : bill.status === 'pending'
+                        ? 'Pendente'
+                        : 'Paga'}
+                </span>
+                <span className="text-sm font-semibold text-text-primary whitespace-nowrap">
+                  {formatCurrency(bill.amount)}
+                </span>
               </div>
             </button>
           ))}
