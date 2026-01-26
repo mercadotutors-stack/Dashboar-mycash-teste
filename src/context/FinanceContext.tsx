@@ -29,6 +29,7 @@ interface FinanceContextValue {
   addTransaction: (input: TransactionInput) => Promise<string>
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
+  resetCardTransactions: (cardId: string) => Promise<void>
   addCreditCard: (input: CreditCardInput) => Promise<string>
   updateCreditCard: (id: string, input: Partial<CreditCardInput>) => Promise<void>
   deleteCreditCard: (id: string) => Promise<void>
@@ -505,6 +506,27 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       })
     },
     [userId, deriveCreditCards, categories],
+  )
+
+  const resetCardTransactions = useCallback(
+    async (cardId: string) => {
+      if (!userId) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        if (!userId) {
+          throw new Error('Usuário não inicializado. Verifique se o Supabase está configurado corretamente.')
+        }
+      }
+
+      const { error } = await supabase.from('transactions').delete().eq('account_id', cardId)
+      if (error) throw error
+
+      setTransactions((prev) => {
+        const updated = prev.filter((tx) => tx.accountId !== cardId)
+        setCreditCards((prevCards) => deriveCreditCards(prevCards, updated))
+        return updated
+      })
+    },
+    [userId, deriveCreditCards],
   )
 
   const addFamilyMember = useCallback(
@@ -992,6 +1014,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    resetCardTransactions,
     addCreditCard,
     updateCreditCard,
     deleteCreditCard,

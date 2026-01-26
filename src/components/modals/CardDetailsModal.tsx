@@ -74,7 +74,7 @@ const getInvoiceStatus = (cycleEnd: Date, dueDate: Date, pendingAmount: number) 
 }
 
 export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, initialMonthKey }: Props) {
-  const { creditCards, transactions, deleteTransaction } = useFinance()
+  const { creditCards, transactions, deleteTransaction, resetCardTransactions } = useFinance()
   const [editTxId, setEditTxId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string>('current')
@@ -209,13 +209,33 @@ export function CardDetailsModal({ cardId, open, onClose, onAddExpense, onEdit, 
             </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100 transition-button"
-          aria-label="Fechar modal"
-        >
-          <Icon name="close" className="w-6 h-6 text-text-primary" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              const confirmed = window.confirm(
+                'Isso vai remover TODOS os lançamentos de despesas deste cartão em todas as faturas. Deseja continuar?',
+              )
+              if (!confirmed) return
+              try {
+                await resetCardTransactions(card.id)
+                setToast('Faturas zeradas e lançamentos removidos.')
+              } catch (err) {
+                console.error(err)
+                setToast('Erro ao zerar faturas.')
+              }
+            }}
+            className="px-4 h-10 rounded-full border border-red-300 text-red-600 hover:bg-red-50 transition-button text-sm font-semibold"
+          >
+            Zerar faturas
+          </button>
+          <button
+            onClick={onClose}
+            className="w-12 h-12 rounded-full border border-border flex items-center justify-center hover:bg-gray-100 transition-button"
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" className="w-6 h-6 text-text-primary" />
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto bg-bg-secondary/60">
