@@ -11,8 +11,8 @@ export function Layout() {
       {/* Header Mobile/Tablet */}
       <HeaderMobile />
 
-      {/* Sidebar - apenas no desktop (lg: ≥1280px) */}
-      <div className="hidden lg:block lg:flex-shrink-0">
+      {/* Sidebar - apenas no desktop (lg: ≥1280px); z-10 para ficar acima do conteúdo e modais de workspace */}
+      <div className="hidden lg:block lg:flex-shrink-0 relative z-10">
         <Sidebar isExpanded={sidebar.isExpanded} toggle={sidebar.toggle} />
       </div>
 

@@ -87,7 +87,7 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
       className={`
         h-screen bg-bg-primary border-r border-sidebar-border
         flex flex-col relative
-        sticky top-0
+        sticky top-0 z-10
         transition-all duration-300 ease-in-out
         ${isExpanded ? 'w-[300px] px-8 py-8' : 'w-[72px] px-4 py-6'}
         box-border
@@ -368,11 +368,12 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
             ) : (
               /* Versão reduzida quando sidebar está fechado */
               <div className="relative w-full flex flex-col items-center gap-2" ref={dropdownRef}>
-                {/* Avatar do workspace */}
+                {/* Avatar do workspace – único clique para abrir dropdown */}
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen((prev) => !prev)}
                   className="w-10 h-10 rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all"
+                  aria-label="Trocar workspace"
                 >
                   {currentWorkspace?.avatarUrl ? (
                     <img
@@ -385,19 +386,6 @@ export function Sidebar({ isExpanded, toggle }: SidebarProps) {
                       {(currentWorkspace?.name?.[0] ?? 'W').slice(0, 1)}
                     </div>
                   )}
-                </button>
-
-                {/* Ícone de dropdown */}
-                <button
-                  type="button"
-                  onClick={() => setIsDropdownOpen((prev) => !prev)}
-                  className="w-6 h-6 rounded-full bg-bg-secondary border border-border flex items-center justify-center hover:bg-bg-primary transition"
-                  aria-label="Trocar workspace"
-                >
-                  <Icon
-                    name="chevronDown"
-                    className={`w-3 h-3 text-text-secondary transition ${isDropdownOpen ? 'rotate-180' : ''}`}
-                  />
                 </button>
 
                 {/* Dropdown reduzido */}
