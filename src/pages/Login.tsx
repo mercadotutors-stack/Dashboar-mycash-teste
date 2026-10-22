@@ -60,9 +60,9 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl border border-border shadow-lg p-8 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-bg-primary flex items-center justify-center lg:justify-end px-4 lg:px-[46px] py-12">
+      <div className="w-full max-w-md self-stretch">
+        <div className="h-full bg-white rounded-2xl border border-border shadow-lg p-8 flex flex-col justify-center gap-6">
           {/* Header */}
           <div className="flex flex-col items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-black flex items-center justify-center">
@@ -115,7 +115,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="h-12 rounded-full bg-black text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="h-12 rounded-full bg-[#2EBE2C] text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
