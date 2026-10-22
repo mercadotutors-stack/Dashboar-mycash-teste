@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Icon } from '../components/ui/Icon'
+import { AuthSplitLayout } from '../components/auth/AuthSplitLayout'
 import { ROUTES } from '../constants'
 
 export default function Login() {
@@ -60,9 +61,9 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-bg-primary flex items-center justify-center lg:justify-end px-4 lg:px-[46px] py-12">
-      <div className="w-full max-w-md self-stretch">
-        <div className="h-full bg-white rounded-2xl border border-border shadow-lg p-8 flex flex-col justify-center gap-6">
+    <>
+      <AuthSplitLayout imageAlt="Casal organizando as finanças da família em casa">
+        <div className="flex flex-col gap-6">
           {/* Header */}
           <div className="flex flex-col items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-black flex items-center justify-center">
@@ -142,13 +143,13 @@ export default function Login() {
             </p>
           </div>
         </div>
-      </div>
+      </AuthSplitLayout>
 
       {toast ? (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black text-white px-4 py-2 shadow-lg z-50">
           {toast}
         </div>
       ) : null}
-    </div>
+    </>
   )
 }
